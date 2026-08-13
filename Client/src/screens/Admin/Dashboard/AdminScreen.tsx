@@ -20,7 +20,7 @@ interface AdminScreenProps {
   onAssignTask: (taskData: {
     title: string;
     description: string;
-    assignedTo: string;
+    assignedTo: string | string[];
     date: string;
     startTime: string;
     endTime: string;

@@ -8,9 +8,9 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { User, Priority } from '../../types';
-import { useTheme } from '../../context/ThemeContext';
-import { Icon } from '../../components/common/Icon';
+import { User, Priority } from '../../../types';
+import { useTheme } from '../../../context/ThemeContext';
+import { Icon } from '../../../components/common/Icon';
 
 interface AssignTaskScreenProps {
   allFaculty: User[];
@@ -19,7 +19,7 @@ interface AssignTaskScreenProps {
   onAssignTask: (taskData: {
     title: string;
     description: string;
-    assignedTo: string;
+    assignedTo: string | string[];
     date: string;
     startTime: string;
     endTime: string;
@@ -38,8 +38,8 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
   const { colors, isDark } = useTheme();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedFacultyId, setSelectedFacultyId] = useState(
-    initialFacultyId || allFaculty[0]?.id || ''
+  const [selectedFacultyIds, setSelectedFacultyIds] = useState<string[]>(
+    initialFacultyId ? [initialFacultyId] : allFaculty[0] ? [allFaculty[0].id] : []
   );
   const [date, setDate] = useState(defaultDate);
   const [startTime, setStartTime] = useState('09:00');
@@ -47,22 +47,34 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
   const [priority, setPriority] = useState<Priority>('Medium');
   const [showFacultyDropdown, setShowFacultyDropdown] = useState(false);
 
-  const selectedFacultyObj = allFaculty.find(f => f.id === selectedFacultyId) || allFaculty[0];
+  const toggleFacultySelection = (id: string) => {
+    setSelectedFacultyIds(prev =>
+      prev.includes(id) ? prev.filter(fId => fId !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedFacultyIds.length === allFaculty.length) {
+      setSelectedFacultyIds([]);
+    } else {
+      setSelectedFacultyIds(allFaculty.map(f => f.id));
+    }
+  };
 
   const handleSubmit = () => {
     if (!title.trim()) {
       Alert.alert('Required Field', 'Please enter a task title/name.');
       return;
     }
-    if (!selectedFacultyId) {
-      Alert.alert('Required Field', 'Please select a faculty member.');
+    if (selectedFacultyIds.length === 0) {
+      Alert.alert('Required Field', 'Please select at least one faculty member to assign.');
       return;
     }
 
     onAssignTask({
       title: title.trim(),
       description: description.trim(),
-      assignedTo: selectedFacultyId,
+      assignedTo: selectedFacultyIds,
       date: date || defaultDate,
       startTime: startTime.trim() || '09:00',
       endTime: endTime.trim() || '10:00',
@@ -74,16 +86,15 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
     onNavigateToSchedule();
   };
 
+  const selectedFacultyObjects = allFaculty.filter(f => selectedFacultyIds.includes(f.id));
+
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.scrollContent}
-    >
-      {/* Clean & Simple Header Bar */}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Fixed Clean Header Bar */}
       <View style={[styles.cleanHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
         <View style={styles.headerLeftGroup}>
           <Icon name="plus" size={18} color={colors.primary} />
-          <Text style={[styles.cleanHeaderTitle, { color: colors.text }]}>Assign Task</Text>
+          <Text style={[styles.cleanHeaderTitle, { color: colors.text }]}>Assign Multi-Faculty Task</Text>
         </View>
 
         <TouchableOpacity
@@ -104,7 +115,12 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Main Form Container */}
+      {/* Form Content ScrollView */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Main Form Container */}
       <View style={styles.formPadding}>
         <View
           style={[
@@ -115,8 +131,50 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
             },
           ]}
         >
-          {/* Select Faculty Member */}
-          <Text style={[styles.label, { color: colors.subText }]}>Assign To Faculty Member *</Text>
+          {/* Select Faculty Members Header */}
+          <View style={styles.labelRow}>
+            <Text style={[styles.label, { color: colors.subText }]}>Assign To Faculty Members *</Text>
+            <View style={[styles.countBadge, { backgroundColor: `${colors.primary}18` }]}>
+              <Text style={[styles.countBadgeText, { color: colors.primary }]}>
+                {selectedFacultyIds.length} / {allFaculty.length} Selected
+              </Text>
+            </View>
+          </View>
+
+          {/* Selected Chips View */}
+          {selectedFacultyObjects.length > 0 && (
+            <View style={styles.chipsContainer}>
+              {selectedFacultyObjects.map(faculty => {
+                const initials = faculty.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2);
+                return (
+                  <View
+                    key={faculty.id}
+                    style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}
+                  >
+                    <View style={[styles.chipAvatar, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.chipAvatarText}>{initials}</Text>
+                    </View>
+                    <Text style={[styles.chipName, { color: colors.text }]} numberOfLines={1}>
+                      {faculty.name}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => toggleFacultySelection(faculty.id)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={[styles.chipRemove, { color: colors.mutedText }]}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Dropdown Selector Button */}
           <TouchableOpacity
             style={[
               styles.dropdownSelector,
@@ -129,19 +187,19 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
             activeOpacity={0.8}
           >
             <View style={styles.selectedFacultyRow}>
-              <View>
-                <Text style={[styles.selectedFacultyName, { color: colors.text }]}>
-                  {selectedFacultyObj?.name || 'Select Faculty'}
-                </Text>
-                <Text style={[styles.selectedFacultyMeta, { color: colors.subText }]}>
-                  Reg. No: {selectedFacultyObj?.regNo || 'FAC-2026-101'} • {selectedFacultyObj?.department}
-                </Text>
-              </View>
+              <Icon name="users" size={16} color={colors.primary} />
+              <Text style={[styles.selectedFacultyName, { color: colors.text, marginLeft: 8 }]}>
+                {selectedFacultyIds.length === 0
+                  ? 'Tap to select faculty members...'
+                  : selectedFacultyIds.length === 1
+                  ? selectedFacultyObjects[0]?.name
+                  : `${selectedFacultyIds.length} Faculty Members Selected`}
+              </Text>
             </View>
             <Icon name={showFacultyDropdown ? 'chevron-up' : 'chevron-down'} size={14} color={colors.subText} />
           </TouchableOpacity>
 
-          {/* Dropdown Options List */}
+          {/* Multi-Select Dropdown List */}
           {showFacultyDropdown && (
             <View
               style={[
@@ -152,27 +210,74 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
                 },
               ]}
             >
+              {/* Select All Toggle Bar */}
+              <TouchableOpacity
+                style={[styles.selectAllBar, { borderBottomColor: colors.inputBorder }]}
+                onPress={handleSelectAll}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.selectAllText, { color: colors.primary }]}>
+                  {selectedFacultyIds.length === allFaculty.length
+                    ? 'Deselect All Faculty'
+                    : 'Select All Faculty'}
+                </Text>
+                <View
+                  style={[
+                    styles.checkboxBox,
+                    selectedFacultyIds.length === allFaculty.length && {
+                      backgroundColor: colors.primary,
+                      borderColor: colors.primary,
+                    },
+                  ]}
+                >
+                  {selectedFacultyIds.length === allFaculty.length && (
+                    <Icon name="check" size={10} color="#FFFFFF" />
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Faculty List Items */}
               {allFaculty.map(faculty => {
-                const isSelected = faculty.id === selectedFacultyId;
+                const isSelected = selectedFacultyIds.includes(faculty.id);
+                const initials = faculty.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2);
+
                 return (
                   <TouchableOpacity
                     key={faculty.id}
                     style={[
                       styles.dropdownItem,
-                      isSelected && { backgroundColor: 'rgba(99, 102, 241, 0.15)' },
+                      isSelected && { backgroundColor: `${colors.primary}12` },
                     ]}
-                    onPress={() => {
-                      setSelectedFacultyId(faculty.id);
-                      setShowFacultyDropdown(false);
-                    }}
+                    onPress={() => toggleFacultySelection(faculty.id)}
+                    activeOpacity={0.8}
                   >
-                    <View style={{ flex: 1 }}>
+                    <View style={[styles.itemAvatarCircle, { backgroundColor: isSelected ? colors.primary : colors.inputBorder }]}>
+                      <Text style={styles.itemAvatarText}>{initials}</Text>
+                    </View>
+
+                    <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={[styles.facultyItemName, { color: colors.text }]}>{faculty.name}</Text>
                       <Text style={[styles.facultyItemDept, { color: colors.subText }]}>
-                        ID: {faculty.regNo || 'FAC-2026-101'} • {faculty.department}
+                        {faculty.regNo || 'FAC-2026-101'} • {faculty.department}
                       </Text>
                     </View>
-                    {isSelected && <Icon name="check" size={14} color={colors.primary} />}
+
+                    <View
+                      style={[
+                        styles.checkboxBox,
+                        isSelected && {
+                          backgroundColor: colors.primary,
+                          borderColor: colors.primary,
+                        },
+                      ]}
+                    >
+                      {isSelected && <Icon name="check" size={10} color="#FFFFFF" />}
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -310,12 +415,17 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
               <Icon name="plus" size={16} color="#FFFFFF" />
-              <Text style={[styles.submitBtnText, { marginLeft: 6 }]}>Confirm & Assign Task</Text>
+              <Text style={[styles.submitBtnText, { marginLeft: 6 }]}>
+                {selectedFacultyIds.length > 1
+                  ? `Assign Task to ${selectedFacultyIds.length} Faculty Members`
+                  : 'Confirm & Assign Task'}
+              </Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -361,11 +471,64 @@ const styles = StyleSheet.create({
     padding: 18,
     borderWidth: 1,
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    marginTop: 6,
+  },
   label: {
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 6,
     marginTop: 12,
+  },
+  countBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  countBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 6,
+  },
+  chipAvatar: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  chipName: {
+    fontSize: 12,
+    fontWeight: '600',
+    maxWidth: 120,
+  },
+  chipRemove: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 2,
   },
   dropdownSelector: {
     flexDirection: 'row',
@@ -379,20 +542,29 @@ const styles = StyleSheet.create({
   selectedFacultyRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   selectedFacultyName: {
     fontSize: 14,
     fontWeight: '700',
   },
-  selectedFacultyMeta: {
-    fontSize: 11,
-    marginTop: 2,
-  },
   dropdownList: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    marginTop: 6,
+    marginTop: 8,
     overflow: 'hidden',
+  },
+  selectAllBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  selectAllText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -403,6 +575,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
+  itemAvatarCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
   facultyItemName: {
     fontSize: 13,
     fontWeight: '700',
@@ -410,6 +594,15 @@ const styles = StyleSheet.create({
   facultyItemDept: {
     fontSize: 11,
     marginTop: 1,
+  },
+  checkboxBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#94A3B8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   input: {
     borderRadius: 12,

@@ -5,7 +5,7 @@ import { fetchUsers, fetchTasks, createTask, completeTask, createUser } from '..
 import { TabBar } from '../components/navigation/TabBar';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
 import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
-import { AssignTaskScreen } from '../screens/Admin/AssignTaskScreen';
+import { AssignTaskScreen } from '../screens/Admin/AssignTask/AssignTaskScreen';
 import { FacultyDirectoryScreen } from '../screens/Admin/FacultyDirectory/FacultyDirectoryScreen';
 import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalyticsScreen';
 import { AdminProfileScreen } from '../screens/Admin/AdminProfileScreen';
@@ -25,7 +25,7 @@ interface AdminNavigatorProps {
   onAssignTask: (taskData: {
     title: string;
     description: string;
-    assignedTo: string;
+    assignedTo: string | string[];
     date: string;
     startTime: string;
     endTime: string;
@@ -254,22 +254,42 @@ export const AppNavigator: React.FC = () => {
   const handleAssignTask = async (taskData: {
     title: string;
     description: string;
-    assignedTo: string;
+    assignedTo: string | string[];
     date: string;
     startTime: string;
     endTime: string;
     priority: Priority;
   }) => {
+    const facultyIds = Array.isArray(taskData.assignedTo)
+      ? taskData.assignedTo
+      : [taskData.assignedTo];
+
+    if (facultyIds.length === 0) {
+      Alert.alert('Required Field', 'Please select at least one faculty member.');
+      return;
+    }
+
     try {
-      const created = await createTask({
-        ...taskData,
-        assignedBy: currentUser?.name || 'Academic Dean',
-        assignedToName: allFaculty.find(f => f.id === taskData.assignedTo)?.name || 'Faculty Member',
-      });
-      setTasks(prev => [created, ...prev]);
+      const newTasks: Task[] = [];
+      for (const fId of facultyIds) {
+        const facultyObj = allFaculty.find(f => f.id === fId);
+        const created = await createTask({
+          ...taskData,
+          assignedTo: fId,
+          assignedBy: currentUser?.name || 'Academic Dean',
+          assignedToName: facultyObj?.name || 'Faculty Member',
+        });
+        newTasks.push(created);
+      }
+      setTasks(prev => [...newTasks, ...prev]);
+
+      const count = newTasks.length;
+      const names = newTasks.map(t => t.assignedToName).join(', ');
       Alert.alert(
         'Task Assigned!',
-        `Successfully assigned "${created.title}" to ${created.assignedToName} for ${created.date}.`
+        count === 1
+          ? `Successfully assigned "${taskData.title}" to ${names} for ${taskData.date}.`
+          : `Successfully assigned "${taskData.title}" to ${count} faculty members (${names}) for ${taskData.date}.`
       );
     } catch {
       Alert.alert('Error', 'Failed to assign task. Please try again.');

@@ -22,6 +22,8 @@ interface FacultyDirectoryScreenProps {
     department: string;
     title: string;
     avatar?: string;
+    regNo?: string;
+    password?: string;
   }) => void;
   onAssignTaskForFaculty?: (facultyId: string) => void;
   onUpdateFaculty?: (updatedData: {
@@ -109,19 +111,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
             .toUpperCase()
             .slice(0, 2);
 
-          // Generate a consistent avatar color from the name
-          const avatarColors = [
-            ['#6366F1', '#818CF8'], // Indigo
-            ['#8B5CF6', '#A78BFA'], // Violet
-            ['#EC4899', '#F472B6'], // Pink
-            ['#F59E0B', '#FBBF24'], // Amber
-            ['#10B981', '#34D399'], // Emerald
-            ['#3B82F6', '#60A5FA'], // Blue
-            ['#EF4444', '#F87171'], // Red
-            ['#14B8A6', '#2DD4BF'], // Teal
-          ];
-          const colorIndex = item.name.length % avatarColors.length;
-          const [avatarBg] = avatarColors[colorIndex];
+
 
           const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
@@ -131,14 +121,11 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
               onPress={() => setSelectedFaculty(item)}
               activeOpacity={0.85}
             >
-              {/* Accent strip at top */}
-              <View style={[styles.accentStrip, { backgroundColor: avatarBg }]} />
-
               {/* Card Header Row with Avatar */}
               <View style={styles.cardHeaderRow}>
                 {/* Avatar Circle */}
                 <View style={styles.avatarContainer}>
-                  <View style={[styles.avatarCircle, { backgroundColor: avatarBg }]}>
+                  <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
                     <Text style={styles.avatarInitials}>{initials}</Text>
                   </View>
                   {/* Online indicator dot */}
@@ -148,8 +135,8 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                 <View style={styles.flex1}>
                   <View style={styles.nameDeptRow}>
                     <Text style={[styles.facultyName, { color: colors.text }]}>{item.name}</Text>
-                    <View style={[styles.deptPill, { backgroundColor: `${avatarBg}18` }]}>
-                      <Text style={[styles.deptPillText, { color: avatarBg }]}>{item.department}</Text>
+                    <View style={[styles.deptPill, { backgroundColor: `${colors.primary}18` }]}>
+                      <Text style={[styles.deptPillText, { color: colors.primary }]}>{item.department}</Text>
                     </View>
                   </View>
 
@@ -161,8 +148,8 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                   {/* Details Row: Reg No & Email */}
                   <View style={styles.detailsRow}>
                     <View style={styles.detailChip}>
-                      <Icon name="user" size={10} color={avatarBg} />
-                      <Text style={[styles.regNoVal, { color: avatarBg }]}>{facultyRegNo}</Text>
+                      <Icon name="user" size={10} color={colors.primary} />
+                      <Text style={[styles.regNoVal, { color: colors.primary }]}>{facultyRegNo}</Text>
                     </View>
 
                     <View style={[styles.detailChip, { flex: 1 }]}>
@@ -231,7 +218,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
               <View style={styles.actionBtnRow}>
                 {onAssignTaskForFaculty ? (
                   <TouchableOpacity
-                    style={[styles.quickAssignBtn, { backgroundColor: avatarBg }]}
+                    style={[styles.quickAssignBtn, { backgroundColor: colors.primary }]}
                     onPress={() => onAssignTaskForFaculty(item.id)}
                     activeOpacity={0.8}
                   >
