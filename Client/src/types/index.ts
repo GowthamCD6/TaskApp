@@ -35,4 +35,18 @@ export interface Task {
 }
 
 export type AdminTab = 'schedule' | 'assign' | 'directory' | 'analytics' | 'profile';
-export type FacultyTab = 'schedule' | 'history' | 'profile';
+export type FacultyTab = 'schedule' | 'history' | 'notifications' | 'profile';
+
+export type NotificationType = 'task_assigned' | 'reminder' | 'broadcast' | 'urgent';
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  timestamp: string;
+  isRead: boolean;
+  relatedTaskId?: string;
+  senderName?: string;
+}
+

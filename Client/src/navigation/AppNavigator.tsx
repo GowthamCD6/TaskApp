@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
-import { User, Task, Priority, AdminTab, FacultyTab } from '../types';
+import { User, Task, Priority, AdminTab, FacultyTab, NotificationItem } from '../types';
 import { fetchUsers, fetchTasks, createTask, completeTask, createUser } from '../services/api';
 import { TabBar } from '../components/navigation/TabBar';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
@@ -11,7 +11,8 @@ import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalytics/TaskAnalytic
 import { AdminProfileScreen } from '../screens/Admin/AdminProfile/AdminProfileScreen';
 import { FacultyScreen } from '../screens/Faculty/FacultyDashboard/FacultyScreen';
 import { TaskHistoryScreen } from '../screens/Faculty/TaskHistory/TaskHistoryScreen';
-import { FacultyProfileScreen } from '../screens/Faculty/FacultyProfileScreen';
+import { FacultyNotificationsScreen } from '../screens/Faculty/Notifications/FacultyNotificationsScreen';
+import { FacultyProfileScreen } from '../screens/Faculty/FacultyProfile/FacultyProfileScreen';
 import { useTheme } from '../context/ThemeContext';
 
 // ==========================================
@@ -163,6 +164,58 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
 }) => {
   const { colors } = useTheme();
 
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: 'notif-1',
+      title: 'Urgent Room Change Notice',
+      message: 'The 2:00 PM Data Structures lecture has been moved to Auditorium 302 due to maintenance.',
+      type: 'urgent',
+      timestamp: '10 mins ago',
+      isRead: false,
+      senderName: 'Academic Office',
+    },
+    {
+      id: 'notif-2',
+      title: 'New Task Assigned by Dean',
+      message: 'You have been assigned to evaluate mid-term examination answer scripts.',
+      type: 'task_assigned',
+      timestamp: '1 hour ago',
+      isRead: false,
+      senderName: 'Dean James Wilson',
+    },
+    {
+      id: 'notif-3',
+      title: 'Upcoming Lecture Reminder',
+      message: 'Advanced Software Engineering lecture starts in 30 minutes at Room 104.',
+      type: 'reminder',
+      timestamp: '2 hours ago',
+      isRead: true,
+    },
+    {
+      id: 'notif-4',
+      title: 'Departmental Faculty Meeting',
+      message: 'Quarterly faculty progress review meeting scheduled for tomorrow at 4:00 PM in Conference Hall B.',
+      type: 'broadcast',
+      timestamp: '1 day ago',
+      isRead: true,
+      senderName: 'Head of Department',
+    },
+  ]);
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
+    );
+  };
+
+  const handleMarkAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const handleClearRead = () => {
+    setNotifications(prev => prev.filter(n => !n.isRead));
+  };
+
   const renderActiveScreen = () => {
     switch (activeTab) {
       case 'history':
@@ -170,6 +223,15 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
           <TaskHistoryScreen
             currentFaculty={currentFaculty}
             allTasks={allTasks}
+          />
+        );
+      case 'notifications':
+        return (
+          <FacultyNotificationsScreen
+            notifications={notifications}
+            onMarkAsRead={handleMarkAsRead}
+            onMarkAllAsRead={handleMarkAllAsRead}
+            onClearRead={handleClearRead}
           />
         );
       case 'profile':

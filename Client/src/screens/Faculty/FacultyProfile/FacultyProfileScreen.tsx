@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { User, Task } from '../../types';
-import { useTheme } from '../../context/ThemeContext';
-import { Icon } from '../../components/common/Icon';
+import { User, Task } from '../../../types';
+import { useTheme } from '../../../context/ThemeContext';
+import { Icon } from '../../../components/common/Icon';
 
 interface FacultyProfileScreenProps {
   currentFaculty: User | null;
@@ -101,7 +101,7 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
 
             {/* Profile Info */}
             <Text style={[styles.userNameText, { color: colors.text }]}>{currentFaculty.name}</Text>
-            
+
             <View style={styles.titleBadgeRow}>
               <View style={[styles.titleBadge, { backgroundColor: `${colors.secondary}18` }]}>
                 <Icon name="academic" size={12} color={colors.secondary} />

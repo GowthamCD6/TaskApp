@@ -89,6 +89,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   const facultyTabs: { id: FacultyTab; label: string; icon: IconName }[] = [
     { id: 'schedule', label: 'Schedule', icon: 'calendar' },
     { id: 'history', label: 'History', icon: 'clipboard' },
+    { id: 'notifications', label: 'Alerts', icon: 'alert' },
     { id: 'profile', label: 'Profile', icon: 'user' },
   ];
 
