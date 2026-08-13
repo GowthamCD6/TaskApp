@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   },
   cleanHeaderTitle: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '700',
     marginLeft: 8,
   },
   backBtn: {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { User, Task } from '../../types';
 import { useTheme } from '../../context/ThemeContext';
 import { Icon } from '../../components/common/Icon';
@@ -19,6 +19,13 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
 
   if (!currentFaculty) return null;
 
+  const initials = currentFaculty.name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
   const facultyTasks = allTasks.filter(t => t.assignedTo === currentFaculty.id);
   const completedCount = facultyTasks.filter(t => t.status === 'completed').length;
   const pendingCount = facultyTasks.length - completedCount;
@@ -28,157 +35,236 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
       : 0;
 
   const handleConfirmLogout = () => {
-    Alert.alert('Logout Account', 'Are you sure you want to log out of TaskAssign Portal?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => onLogout && onLogout(),
-      },
-    ]);
+    Alert.alert(
+      'Logout Account Session',
+      'Are you sure you want to sign out of your Faculty Portal account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout Session',
+          style: 'destructive',
+          onPress: () => onLogout && onLogout(),
+        },
+      ]
+    );
+  };
+
+  const handleCopyEmail = () => {
+    Alert.alert('Faculty Contact Information', `Email: ${currentFaculty.email}`);
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.scrollContent}
-    >
-      {/* Profile Banner */}
-      <View
-        style={[
-          styles.profileCard,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.cardBorder,
-          },
-        ]}
-      >
-        <Image source={{ uri: currentFaculty.avatar }} style={styles.avatar} />
-        <Text style={[styles.name, { color: colors.text }]}>{currentFaculty.name}</Text>
-        <Text style={styles.title}>{currentFaculty.title}</Text>
-        <Text style={[styles.dept, { color: colors.subText }]}>{currentFaculty.department}</Text>
-        
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-          <Icon name="mail" size={12} color={colors.subText} />
-          <Text style={[styles.email, { color: colors.subText, marginLeft: 4 }]}>
-            {currentFaculty.email}
-          </Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Pinned Top Header */}
+      <View style={[styles.topHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        <View style={styles.headerLeftGroup}>
+          <Icon name="user" size={18} color={colors.secondary} />
+          <Text style={[styles.topHeaderTitle, { color: colors.text }]}>Faculty Portal Console</Text>
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-          <Icon name="user" size={12} color={colors.primary} />
-          <Text style={[styles.email, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
-            Reg. No: {currentFaculty.regNo || 'FAC-2026-101'}
-          </Text>
-        </View>
-      </View>
-
-      {/* Account Settings & Controls */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>System & Preferences</Text>
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        {/* Theme Switcher Setting */}
         <TouchableOpacity
-          style={[styles.settingRow, { borderBottomColor: colors.cardBorder }]}
+          style={[styles.quickThemeBtn, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}
           onPress={toggleTheme}
           activeOpacity={0.8}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={[styles.settingIconBox, { backgroundColor: colors.surface }]}>
-              <Icon name={isDark ? 'sun' : 'moon'} size={16} color={colors.primary} />
-            </View>
-            <View style={{ marginLeft: 10 }}>
-              <Text style={[styles.settingTitle, { color: colors.text }]}>App Theme</Text>
-              <Text style={[styles.settingSub, { color: colors.subText }]}>
-                Current Mode: {isDark ? 'Dark Theme' : 'Light Theme'}
-              </Text>
-            </View>
-          </View>
-          <View style={[styles.themePill, { backgroundColor: colors.primary }]}>
-            <Text style={styles.themePillText}>Toggle Theme</Text>
-          </View>
+          <Icon name={isDark ? 'sun' : 'moon'} size={14} color={colors.secondary} />
+          <Text style={[styles.quickThemeText, { color: colors.text }]}>
+            {isDark ? 'Light' : 'Dark'}
+          </Text>
         </TouchableOpacity>
+      </View>
 
-        {/* Logout Setting */}
-        {onLogout && (
-          <TouchableOpacity
-            style={styles.logoutSettingRow}
-            onPress={handleConfirmLogout}
-            activeOpacity={0.8}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={[styles.settingIconBox, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
-                <Icon name="logout" size={16} color="#EF4444" />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Executive Hero Banner Card */}
+        <View
+          style={[
+            styles.heroCard,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.cardBorder,
+            },
+          ]}
+        >
+          <View style={[styles.coverAccent, { backgroundColor: colors.secondary }]} />
+
+          <View style={styles.heroBody}>
+            {/* Avatar Circle */}
+            <View style={styles.avatarWrapper}>
+              <View style={[styles.avatarCircle, { backgroundColor: colors.secondary }]}>
+                <Text style={styles.avatarInitials}>{initials}</Text>
               </View>
-              <View style={{ marginLeft: 10 }}>
-                <Text style={styles.logoutTitle}>Logout Account</Text>
-                <Text style={[styles.settingSub, { color: colors.subText }]}>
-                  Sign out of your active session
+              <View style={[styles.statusIndicatorDot, { borderColor: colors.card }]} />
+            </View>
+
+            {/* Profile Info */}
+            <Text style={[styles.userNameText, { color: colors.text }]}>{currentFaculty.name}</Text>
+            
+            <View style={styles.titleBadgeRow}>
+              <View style={[styles.titleBadge, { backgroundColor: `${colors.secondary}18` }]}>
+                <Icon name="academic" size={12} color={colors.secondary} />
+                <Text style={[styles.titleBadgeText, { color: colors.secondary }]}>
+                  {currentFaculty.title || 'Faculty Member'}
+                </Text>
+              </View>
+              <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <Icon name="check" size={10} color="#10B981" />
+                <Text style={styles.verifiedText}>Active Duties</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.userDeptText, { color: colors.subText }]}>{currentFaculty.department}</Text>
+
+            {/* Details Chips */}
+            <View style={styles.heroActionRow}>
+              <TouchableOpacity
+                style={[styles.heroActionChip, { backgroundColor: colors.surface }]}
+                onPress={handleCopyEmail}
+                activeOpacity={0.8}
+              >
+                <Icon name="mail" size={12} color={colors.subText} />
+                <Text style={[styles.heroActionText, { color: colors.subText }]}>{currentFaculty.email}</Text>
+              </TouchableOpacity>
+
+              <View style={[styles.heroActionChip, { backgroundColor: colors.surface }]}>
+                <Icon name="user" size={12} color={colors.secondary} />
+                <Text style={[styles.heroActionText, { color: colors.secondary, fontWeight: '700' }]}>
+                  {currentFaculty.regNo || 'FAC-2026-101'}
                 </Text>
               </View>
             </View>
-            <Icon name="arrow-right" size={14} color="#EF4444" />
+          </View>
+        </View>
+
+        {/* SECTION 1: Workload Summary Cards */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Workload & Performance Summary</Text>
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={[styles.statIconBox, { backgroundColor: `${colors.primary}15` }]}>
+              <Icon name="clipboard" size={16} color={colors.primary} />
+            </View>
+            <Text style={[styles.statVal, { color: colors.text }]}>{facultyTasks.length}</Text>
+            <Text style={[styles.statSubText, { color: colors.subText }]}>Assigned Tasks</Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={[styles.statIconBox, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
+              <Icon name="clock" size={16} color="#F59E0B" />
+            </View>
+            <Text style={[styles.statVal, { color: '#F59E0B' }]}>{pendingCount}</Text>
+            <Text style={[styles.statSubText, { color: colors.subText }]}>Pending Duties</Text>
+          </View>
+
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={[styles.statIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+              <Icon name="check" size={16} color="#10B981" />
+            </View>
+            <Text style={[styles.statVal, { color: '#10B981' }]}>{completedCount}</Text>
+            <Text style={[styles.statSubText, { color: colors.subText }]}>Completed Tasks</Text>
+          </View>
+        </View>
+
+        {/* SECTION 2: Progress Track Card */}
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <View style={styles.progressHeaderRow}>
+            <Text style={[styles.infoLabel, { color: colors.subText }]}>Overall Task Completion Rate</Text>
+            <Text style={[styles.rateValText, { color: colors.secondary }]}>{completionRate}%</Text>
+          </View>
+          <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
+            <View style={[styles.progressFill, { width: `${completionRate}%`, backgroundColor: colors.secondary }]} />
+          </View>
+        </View>
+
+        {/* SECTION 3: Departmental Information */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Departmental & System Details</Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
+            <Text style={[styles.infoLabel, { color: colors.subText }]}>Role</Text>
+            <Text style={[styles.infoValText, { color: colors.text }]}>Faculty Member</Text>
+          </View>
+
+          <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
+            <Text style={[styles.infoLabel, { color: colors.subText }]}>Reg. No.</Text>
+            <Text style={[styles.infoValText, { color: colors.secondary }]}>{currentFaculty.regNo || 'FAC-2026-101'}</Text>
+          </View>
+
+          <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
+            <Text style={[styles.infoLabel, { color: colors.subText }]}>Department</Text>
+            <Text style={[styles.infoValText, { color: colors.text }]}>{currentFaculty.department}</Text>
+          </View>
+
+          <View style={styles.infoRowLast}>
+            <Text style={[styles.infoLabel, { color: colors.subText }]}>Duty Status</Text>
+            <Text style={[styles.infoValText, styles.activeText]}>● Active Duties</Text>
+          </View>
+        </View>
+
+        {/* SECTION 4: Preferences & Session */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Preferences & Session</Text>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+          {/* Theme Setting */}
+          <TouchableOpacity
+            style={[styles.settingRowItem, { borderBottomColor: colors.cardBorder }]}
+            onPress={toggleTheme}
+            activeOpacity={0.8}
+          >
+            <View style={styles.settingRowLeft}>
+              <View style={[styles.settingIconBg, { backgroundColor: colors.surface }]}>
+                <Icon name={isDark ? 'sun' : 'moon'} size={16} color={colors.secondary} />
+              </View>
+              <View style={{ marginLeft: 12 }}>
+                <Text style={[styles.settingItemTitle, { color: colors.text }]}>Appearance Theme</Text>
+                <Text style={[styles.settingItemSub, { color: colors.subText }]}>
+                  Current Mode: {isDark ? 'Dark Mode' : 'Light Mode'}
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.toggleBadge, { backgroundColor: colors.secondary }]}>
+              <Text style={styles.toggleBadgeText}>{isDark ? 'Switch Light' : 'Switch Dark'}</Text>
+            </View>
           </TouchableOpacity>
-        )}
-      </View>
 
-      {/* Workload Stats */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Workload Performance Summary</Text>
-      <View style={styles.statsGrid}>
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.statNum, { color: colors.text }]}>{facultyTasks.length}</Text>
-          <Text style={[styles.statLabel, { color: colors.subText }]}>Total Tasks</Text>
-        </View>
+          {/* Active Session Token */}
+          <View style={[styles.settingRowItem, { borderBottomColor: colors.cardBorder }]}>
+            <View style={styles.settingRowLeft}>
+              <View style={[styles.settingIconBg, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <Icon name="lock" size={16} color="#10B981" />
+              </View>
+              <View style={{ marginLeft: 12 }}>
+                <Text style={[styles.settingItemTitle, { color: colors.text }]}>Active Session Token</Text>
+                <Text style={[styles.settingItemSub, { color: colors.subText }]}>
+                  Encrypted • Mobile Session Active
+                </Text>
+              </View>
+            </View>
+          </View>
 
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.statNum, styles.pendingText]}>{pendingCount}</Text>
-          <Text style={[styles.statLabel, { color: colors.subText }]}>Pending</Text>
+          {/* Logout Button */}
+          {onLogout && (
+            <TouchableOpacity
+              style={styles.logoutRowItem}
+              onPress={handleConfirmLogout}
+              activeOpacity={0.85}
+            >
+              <View style={styles.settingRowLeft}>
+                <View style={[styles.settingIconBg, { backgroundColor: 'rgba(239, 68, 68, 0.15)' }]}>
+                  <Icon name="logout" size={16} color="#EF4444" />
+                </View>
+                <View style={{ marginLeft: 12 }}>
+                  <Text style={styles.logoutItemTitle}>Sign Out Faculty Session</Text>
+                  <Text style={[styles.settingItemSub, { color: colors.subText }]}>
+                    Safely exit active portal session
+                  </Text>
+                </View>
+              </View>
+              <Icon name="arrow-right" size={14} color="#EF4444" />
+            </TouchableOpacity>
+          )}
         </View>
-
-        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.statNum, styles.doneText]}>{completedCount}</Text>
-          <Text style={[styles.statLabel, { color: colors.subText }]}>Completed</Text>
-        </View>
-      </View>
-
-      {/* Progress Bar Card */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <Text style={[styles.cardHeader, { color: colors.subText }]}>Overall Completion Rate</Text>
-        <Text style={styles.ratePercent}>{completionRate}%</Text>
-        <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
-          <View style={[styles.progressFill, { width: `${completionRate}%` }]} />
-        </View>
-      </View>
-
-      {/* Department Information */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <Text style={[styles.cardHeader, { color: colors.subText }]}>Departmental & System Details</Text>
-        
-        <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
-          <Text style={[styles.infoKey, { color: colors.subText }]}>Role</Text>
-          <Text style={[styles.infoVal, { color: colors.text }]}>Faculty Member</Text>
-        </View>
-
-        <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
-          <Text style={[styles.infoKey, { color: colors.subText }]}>Reg. No.</Text>
-          <Text style={[styles.infoVal, { color: colors.primary }]}>{currentFaculty.regNo || 'FAC-2026-101'}</Text>
-        </View>
-
-        <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
-          <Text style={[styles.infoKey, { color: colors.subText }]}>Department</Text>
-          <Text style={[styles.infoVal, { color: colors.text }]}>{currentFaculty.department}</Text>
-        </View>
-
-        <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
-          <Text style={[styles.infoKey, { color: colors.subText }]}>Office Location</Text>
-          <Text style={[styles.infoVal, { color: colors.text }]}>Building B, Room 304</Text>
-        </View>
-
-        <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
-          <Text style={[styles.infoKey, { color: colors.subText }]}>Status</Text>
-          <Text style={[styles.infoVal, styles.activeText]}>● Active Duties</Text>
-        </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -186,132 +272,196 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  headerLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  topHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  quickThemeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 4,
+  },
+  quickThemeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   scrollContent: {
     padding: 16,
     paddingBottom: 30,
   },
-  profileCard: {
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
+  heroCard: {
+    borderRadius: 22,
+    overflow: 'hidden',
     marginBottom: 16,
     borderWidth: 1,
   },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 12,
-    borderWidth: 3,
-    borderColor: '#10B981',
+  coverAccent: {
+    height: 60,
+    opacity: 0.85,
   },
-  name: {
+  heroBody: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 18,
+    marginTop: -36,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    marginBottom: 10,
+  },
+  avatarCircle: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  avatarInitials: {
+    color: '#FFFFFF',
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  statusIndicatorDot: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#10B981',
+    borderWidth: 3,
+  },
+  userNameText: {
     fontSize: 20,
     fontWeight: '800',
   },
-  title: {
-    fontSize: 13,
+  titleBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+    marginBottom: 4,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  titleBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 5,
+  },
+  titleBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 4,
+  },
+  verifiedText: {
     color: '#10B981',
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: 11,
+    fontWeight: '700',
   },
-  dept: {
-    fontSize: 13,
-    marginTop: 2,
+  userDeptText: {
+    fontSize: 12,
+    marginBottom: 12,
   },
-  email: {
+  heroActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  heroActionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    gap: 5,
+  },
+  heroActionText: {
     fontSize: 12,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     marginBottom: 10,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  logoutSettingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  settingIconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  logoutTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#EF4444',
-  },
-  settingSub: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  themePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  themePillText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
+    marginTop: 4,
   },
   statsGrid: {
     flexDirection: 'row',
+    gap: 8,
     marginBottom: 16,
   },
   statCard: {
     flex: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginRight: 8,
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
     alignItems: 'center',
   },
-  statNum: {
-    fontSize: 22,
+  statIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  statVal: {
+    fontSize: 20,
     fontWeight: '800',
   },
-  pendingText: {
-    color: '#F59E0B',
-  },
-  doneText: {
-    color: '#10B981',
-  },
-  statLabel: {
+  statSubText: {
     fontSize: 11,
+    fontWeight: '600',
     marginTop: 2,
+    textAlign: 'center',
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
-    marginBottom: 14,
+    marginBottom: 16,
     borderWidth: 1,
   },
-  cardHeader: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 8,
+  progressHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  ratePercent: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#10B981',
-    marginBottom: 8,
+  rateValText: {
+    fontSize: 18,
+    fontWeight: '800',
   },
   progressTrack: {
     height: 8,
@@ -320,23 +470,79 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#10B981',
     borderRadius: 4,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    alignItems: 'center',
+    paddingVertical: 10,
     borderBottomWidth: 1,
   },
-  infoKey: {
-    fontSize: 13,
+  infoRowLast: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
   },
-  infoVal: {
+  infoLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
+  },
+  infoValText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   activeText: {
     color: '#10B981',
+    fontSize: 12,
+  },
+  settingRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  logoutRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  settingRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  settingIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingItemTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  logoutItemTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#EF4444',
+  },
+  settingItemSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  toggleBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  toggleBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

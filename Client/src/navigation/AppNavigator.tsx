@@ -8,7 +8,7 @@ import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
 import { AssignTaskScreen } from '../screens/Admin/AssignTask/AssignTaskScreen';
 import { FacultyDirectoryScreen } from '../screens/Admin/FacultyDirectory/FacultyDirectoryScreen';
 import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalytics/TaskAnalyticsScreen';
-import { AdminProfileScreen } from '../screens/Admin/AdminProfileScreen';
+import { AdminProfileScreen } from '../screens/Admin/AdminProfile/AdminProfileScreen';
 import { FacultyScreen } from '../screens/Faculty/FacultyScreen';
 import { TaskHistoryScreen } from '../screens/Faculty/TaskHistoryScreen';
 import { FacultyProfileScreen } from '../screens/Faculty/FacultyProfileScreen';

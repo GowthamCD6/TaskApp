@@ -337,8 +337,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cleanHeaderTitle: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '700',
     marginLeft: 8,
   },
   modeSegment: {

@@ -43,17 +43,17 @@ export const TabBar: React.FC<TabBarProps> = ({
         {adminTabs.map(tab => {
           const isActive = activeAdminTab === tab.id;
           const activeColor = colors.primary;
-          const inactiveColor = colors.mutedText;
+          const inactiveColor = isDark ? '#94A3B8' : '#64748B';
           const activePillBg = isDark
-            ? 'rgba(99, 102, 241, 0.2)'
-            : 'rgba(99, 102, 241, 0.12)';
+            ? 'rgba(99, 102, 241, 0.22)'
+            : 'rgba(99, 102, 241, 0.14)';
 
           return (
             <TouchableOpacity
               key={tab.id}
               style={styles.tabItem}
               onPress={() => onSelectAdminTab(tab.id)}
-              activeOpacity={0.8}
+              activeOpacity={0.75}
             >
               <View
                 style={[
@@ -63,9 +63,9 @@ export const TabBar: React.FC<TabBarProps> = ({
               >
                 <Icon
                   name={tab.icon}
-                  size={isActive ? 20 : 18}
+                  size={isActive ? 22 : 20}
                   color={isActive ? activeColor : inactiveColor}
-                  strokeWidth={isActive ? 2.5 : 2.0}
+                  strokeWidth={isActive ? 3.0 : 2.4}
                 />
               </View>
               <Text
@@ -105,17 +105,17 @@ export const TabBar: React.FC<TabBarProps> = ({
       {facultyTabs.map(tab => {
         const isActive = activeFacultyTab === tab.id;
         const activeColor = colors.secondary;
-        const inactiveColor = colors.mutedText;
+        const inactiveColor = isDark ? '#94A3B8' : '#64748B';
         const activePillBg = isDark
-          ? 'rgba(16, 185, 129, 0.2)'
-          : 'rgba(16, 185, 129, 0.12)';
+          ? 'rgba(16, 185, 129, 0.22)'
+          : 'rgba(16, 185, 129, 0.14)';
 
         return (
           <TouchableOpacity
             key={tab.id}
             style={styles.tabItem}
             onPress={() => onSelectFacultyTab(tab.id)}
-            activeOpacity={0.8}
+            activeOpacity={0.75}
           >
             <View
               style={[
@@ -125,9 +125,9 @@ export const TabBar: React.FC<TabBarProps> = ({
             >
               <Icon
                 name={tab.icon}
-                size={isActive ? 20 : 18}
+                size={isActive ? 22 : 20}
                 color={isActive ? activeColor : inactiveColor}
-                strokeWidth={isActive ? 2.5 : 2.0}
+                strokeWidth={isActive ? 3.0 : 2.4}
               />
             </View>
             <Text
@@ -152,32 +152,31 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    elevation: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 2,
   },
   iconBox: {
-    width: 38,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 3,
+    marginBottom: 4,
   },
   activeIconBox: {
-    width: 42,
-    height: 28,
-    borderRadius: 14,
+    width: 46,
+    height: 30,
+    borderRadius: 15,
   },
   tabLabel: {
     fontSize: 11,
