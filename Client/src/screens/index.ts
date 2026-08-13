@@ -4,6 +4,6 @@ export { AssignTaskScreen } from './Admin/AssignTask/AssignTaskScreen';
 export { FacultyDirectoryScreen } from './Admin/FacultyDirectory/FacultyDirectoryScreen';
 export { TaskAnalyticsScreen } from './Admin/TaskAnalytics/TaskAnalyticsScreen';
 
-export { FacultyScreen } from './Faculty/FacultyScreen';
+export { FacultyScreen } from './Faculty/FacultyDashboard/FacultyScreen';
 export { TaskHistoryScreen } from './Faculty/TaskHistoryScreen';
 export { FacultyProfileScreen } from './Faculty/FacultyProfileScreen';
