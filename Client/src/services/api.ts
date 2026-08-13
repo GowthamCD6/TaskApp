@@ -152,29 +152,19 @@ export const loginUser = async (credentials: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(5000),
     });
-    if (response.ok) {
-      const json = await response.json();
+    const json = await response.json();
+    if (response.ok && json.data) {
       return json.data;
     }
-  } catch {
-    // Fallback to local memory matching
+    throw new Error(json.message || 'Invalid login credentials.');
+  } catch (err: any) {
+    if (err.message && err.message !== 'Failed to fetch') {
+      throw err;
+    }
+    throw new Error('Unable to connect to backend server. Please verify network connection.');
   }
-
-  if (credentials.id) {
-    const found = localUsers.find(u => u.id === credentials.id);
-    if (found) return found;
-  }
-  if (credentials.regNo) {
-    const found = localUsers.find(u => u.regNo?.toLowerCase() === credentials.regNo?.toLowerCase());
-    if (found) return found;
-  }
-  if (credentials.role) {
-    const found = localUsers.find(u => u.role.toLowerCase() === credentials.role?.toLowerCase());
-    if (found) return found;
-  }
-  return localUsers[0];
 };
 
 export const loginWithGoogle = async (googleUser?: { id?: string; email?: string; name?: string; avatar?: string }): Promise<User> => {
@@ -182,30 +172,20 @@ export const loginWithGoogle = async (googleUser?: { id?: string; email?: string
     const response = await fetch(`${BASE_URL}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        googleUser: googleUser || {
-          id: `google-user-${Date.now()}`,
-          email: 'gowthamcd.it24@bitsathy.ac.in',
-          name: 'Gowtham (Google Workspace)',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-        },
-      }),
+      body: JSON.stringify({ googleUser }),
       signal: AbortSignal.timeout(5000),
     });
-    if (response.ok) {
-      const json = await response.json();
+    const json = await response.json();
+    if (response.ok && json.data) {
       return json.data;
     }
-  } catch (err) {
-    console.warn('Google auth API call error, falling back:', err);
+    throw new Error(json.message || 'Google Authentication failed.');
+  } catch (err: any) {
+    if (err.message && err.message !== 'Failed to fetch') {
+      throw err;
+    }
+    throw new Error('Unable to connect to backend server for Google sign in.');
   }
-
-  // Fallback Google User account
-  const defaultUser = localUsers.find(u => u.role === 'admin') || localUsers[0];
-  return {
-    ...defaultUser,
-    googleId: `google-123456`,
-  };
 };
 
 export const fetchUsers = async (role?: string): Promise<User[]> => {

@@ -32,8 +32,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const { isDark, colors, toggleTheme } = useTheme();
   const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>(allFaculty[0]?.id || 'fac-1');
-  const [regNo, setRegNo] = useState<string>('242IT163');
-  const [password, setPassword] = useState<string>('123456');
+  const [regNo, setRegNo] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
 
   // Google Account Chooser Modal State
   const [showGoogleModal, setShowGoogleModal] = useState<boolean>(false);
@@ -87,31 +87,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     setShowGoogleModal(true);
   };
 
-  const adminUser: User = {
-    id: 'admin-1',
-    name: 'Gowtham',
-    email: 'gowthamcd.it24@bitsathy.ac.in',
-    regNo: '242IT163',
-    role: 'admin',
-    department: 'Information Technology',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-    title: 'System Administrator',
-  };
-
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleLogin = async () => {
+    if (selectedRole === 'admin' && !regNo.trim()) {
+      Alert.alert('Validation Error', 'Please enter your Admin Registration Number / ID.');
+      return;
+    }
+    if (!password) {
+      Alert.alert('Validation Error', 'Please enter your Password.');
+      return;
+    }
+
     setIsLoggingIn(true);
     try {
       let payload = {};
       if (selectedRole === 'admin') {
-        payload = { regNo: regNo.trim() || '242IT163', password: password || '123456', role: 'admin' };
+        payload = { regNo: regNo.trim(), password, role: 'admin' };
       } else {
         const faculty = allFaculty.find(f => f.id === selectedFacultyId) || allFaculty[0];
         payload = {
           id: faculty?.id || selectedFacultyId,
-          regNo: faculty?.regNo || regNo || 'FAC-2026-101',
-          password: password || '123456',
+          regNo: faculty?.regNo || regNo,
+          password,
           role: 'faculty',
         };
       }
@@ -119,13 +117,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       const authenticatedUser = await loginUser(payload);
       onLoginSuccess(authenticatedUser);
     } catch (err: any) {
-      console.warn('Backend login fallback active:', err);
-      if (selectedRole === 'admin') {
-        onLoginSuccess(adminUser);
-      } else {
-        const faculty = allFaculty.find(f => f.id === selectedFacultyId) || allFaculty[0];
-        onLoginSuccess(faculty || adminUser);
-      }
+      Alert.alert('Login Failed', err.message || 'Unable to authenticate with backend server.');
     } finally {
       setIsLoggingIn(false);
     }
@@ -141,14 +133,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         avatar: account.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
       });
       onLoginSuccess(authenticatedUser);
-    } catch (err) {
-      console.warn('Google login error:', err);
-      if (account.role === 'admin' || account.email.includes('gowtham')) {
-        onLoginSuccess(adminUser);
-      } else {
-        const faculty = allFaculty.find(f => f.email.toLowerCase() === account.email.toLowerCase()) || allFaculty[0];
-        onLoginSuccess(faculty || adminUser);
-      }
+    } catch (err: any) {
+      Alert.alert('Google Sign-In Error', err.message || 'Failed to authenticate Google user with backend.');
     } finally {
       setIsLoggingIn(false);
     }
@@ -241,7 +227,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               ]}
               onPress={() => {
                 setSelectedRole('admin');
-                setRegNo('242IT163');
+                setRegNo('');
+                setPassword('');
               }}
               activeOpacity={0.8}
             >
@@ -272,8 +259,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 const firstFac = allFaculty[0];
                 if (firstFac) {
                   setSelectedFacultyId(firstFac.id);
-                  setRegNo(firstFac.regNo || 'FAC-2026-101');
+                  setRegNo(firstFac.regNo || '');
                 }
+                setPassword('');
               }}
               activeOpacity={0.8}
             >
@@ -375,8 +363,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       ]}
                       onPress={() => {
                         setSelectedFacultyId(item.id);
-                        setRegNo(item.regNo || 'FAC-2026-101');
-                        if (!password) setPassword('123456');
+                        setRegNo(item.regNo || '');
                       }}
                       activeOpacity={0.8}
                     >
@@ -384,7 +371,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       <View style={styles.facultyMeta}>
                         <Text style={[styles.facultyName, { color: colors.text }]}>{item.name}</Text>
                         <Text style={[styles.facultySub, { color: colors.subText }]}>
-                          Reg. No: <Text style={{ color: colors.primary, fontWeight: '700' }}>{item.regNo || 'FAC-2026-101'}</Text> • {item.department}
+                          Reg. No: <Text style={{ color: colors.primary, fontWeight: '700' }}>{item.regNo || item.id}</Text> • {item.department}
                         </Text>
                       </View>
                       {isSelected && (
@@ -397,7 +384,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 }}
               />
 
-              <Text style={[styles.label, { color: colors.subText }]}>Password (Default: 123456)</Text>
+              <Text style={[styles.label, { color: colors.subText }]}>Password</Text>
               <View
                 style={[
                   styles.inputWrapper,
