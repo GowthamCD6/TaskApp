@@ -1,20 +1,25 @@
 const { pool } = require('../config/db');
 
 // Helper to format user row
-const formatUserRow = (row) => ({
-  id: row.id,
-  googleId: row.google_id || null,
-  regNo: row.reg_no || (row.role === 'admin' ? 'ADM-2026-001' : 'FAC-2026-101'),
-  name: row.name,
-  email: row.email,
-  role: row.role,
-  department: row.department || 'Academic Department',
-  title: row.title || 'Faculty Member',
-  avatar: row.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-  phone: row.phone || '+1 (555) 123-4567',
-  officeHours: row.office_hours || 'Mon - Fri, 09:00 AM - 05:00 PM',
-  createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
-});
+const formatUserRow = (row) => {
+  const modeId = row.theme_mode_id !== undefined ? Number(row.theme_mode_id) : (row.themeMode === 'dark' || row.theme_mode === 'dark' ? 2 : 1);
+  return {
+    id: row.id,
+    googleId: row.google_id || null,
+    regNo: row.reg_no || (row.role === 'admin' ? 'ADM-2026-001' : 'FAC-2026-101'),
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    department: row.department || 'Academic Department',
+    title: row.title || 'Faculty Member',
+    avatar: row.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+    phone: row.phone || '+1 (555) 123-4567',
+    officeHours: row.office_hours || 'Mon - Fri, 09:00 AM - 05:00 PM',
+    themeModeId: modeId,
+    themeMode: modeId === 2 ? 'dark' : 'light',
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+  };
+};
 
 // GET /api/users
 const getUsers = async (req, res) => {
@@ -147,7 +152,7 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, department, title, avatar, phone, officeHours, regNo } = req.body;
+    const { name, email, department, title, avatar, phone, officeHours, regNo, themeMode, theme_mode, themeModeId } = req.body;
 
     const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
     if (rows.length === 0) {
@@ -167,8 +172,16 @@ const updateUser = async (req, res) => {
     const updatedOfficeHours = officeHours !== undefined ? officeHours : current.office_hours;
     const updatedRegNo = regNo !== undefined ? regNo.trim() : current.reg_no;
 
+    const requestedMode = themeMode || theme_mode;
+    let updatedThemeModeId = current.theme_mode_id || 1;
+    if (themeModeId !== undefined) {
+      updatedThemeModeId = Number(themeModeId);
+    } else if (requestedMode !== undefined) {
+      updatedThemeModeId = requestedMode === 'dark' ? 2 : 1;
+    }
+
     await pool.query(
-      `UPDATE users SET name = ?, email = ?, department = ?, title = ?, avatar = ?, phone = ?, office_hours = ?, reg_no = ? WHERE id = ?`,
+      `UPDATE users SET name = ?, email = ?, department = ?, title = ?, avatar = ?, phone = ?, office_hours = ?, reg_no = ?, theme_mode_id = ? WHERE id = ?`,
       [
         updatedName,
         updatedEmail,
@@ -178,6 +191,7 @@ const updateUser = async (req, res) => {
         updatedPhone,
         updatedOfficeHours,
         updatedRegNo,
+        updatedThemeModeId,
         id,
       ]
     );

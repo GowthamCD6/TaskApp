@@ -251,7 +251,7 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
 // 3. Master App Navigator Component
 // ==========================================
 export const AppNavigator: React.FC = () => {
-  const { colors } = useTheme();
+  const { colors, setTheme } = useTheme();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allFaculty, setAllFaculty] = useState<User[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -287,6 +287,7 @@ export const AppNavigator: React.FC = () => {
   // Auth Handlers
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
+    setTheme(user.themeMode || 'light');
     if (user.role === 'admin') {
       setActiveAdminTab('schedule');
     } else {
@@ -296,6 +297,7 @@ export const AppNavigator: React.FC = () => {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setTheme('light');
   };
 
   // Admin Handlers

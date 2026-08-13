@@ -25,7 +25,7 @@ const getNotifications = async (req, res) => {
       params.push(userId);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY timestamp DESC';
 
     const [rows] = await pool.query(query, params);
     const notifications = rows.map(formatNotificationRow);

@@ -209,6 +209,17 @@ async function initTiDB() {
   const conn = await mysql.createConnection({ ...dbConfig, database: DB_NAME });
 
   try {
+    // 0. Create Theme Modes Table
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS theme_modes (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(50) NOT NULL UNIQUE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `);
+    await conn.query(`
+      INSERT IGNORE INTO theme_modes (id, name) VALUES (1, 'light'), (2, 'dark');
+    `);
+
     // 1. Create Users Table
     await conn.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -224,8 +235,10 @@ async function initTiDB() {
         avatar TEXT,
         phone VARCHAR(50),
         office_hours VARCHAR(255),
+        theme_mode_id INT DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (theme_mode_id) REFERENCES theme_modes(id) ON DELETE SET NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
@@ -235,6 +248,7 @@ async function initTiDB() {
       'ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT "123456"',
       'ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50)',
       'ALTER TABLE users ADD COLUMN IF NOT EXISTS office_hours VARCHAR(255)',
+      'ALTER TABLE users ADD COLUMN IF NOT EXISTS theme_mode_id INT DEFAULT 1',
     ];
     for (const q of alterQueries) {
       try {
@@ -243,7 +257,7 @@ async function initTiDB() {
         // Ignore column exists error
       }
     }
-    console.log('✅ Users table created/updated on TiDB Cloud.');
+    console.log('✅ Users & Theme Modes tables created/updated on TiDB Cloud.');
 
     // 2. Create Tasks Table
     await conn.query(`

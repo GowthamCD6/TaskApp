@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { User, Task } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
+import { updateUser } from '../../../services/api';
 
 interface FacultyProfileScreenProps {
   currentFaculty: User | null;
@@ -16,6 +17,18 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
   onLogout,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
+
+  const handleToggleThemeMode = async () => {
+    const nextTheme = isDark ? 'light' : 'dark';
+    toggleTheme();
+    if (currentFaculty?.id) {
+      try {
+        await updateUser(currentFaculty.id, { themeMode: nextTheme });
+      } catch (err) {
+        console.warn('Failed to persist theme to backend:', err);
+      }
+    }
+  };
 
   if (!currentFaculty) return null;
 
@@ -64,7 +77,7 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
 
         <TouchableOpacity
           style={[styles.quickThemeBtn, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}
-          onPress={toggleTheme}
+          onPress={handleToggleThemeMode}
           activeOpacity={0.8}
         >
           <Icon name={isDark ? 'sun' : 'moon'} size={14} color={colors.secondary} />
@@ -207,7 +220,7 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
           {/* Theme Setting */}
           <TouchableOpacity
             style={[styles.settingRowItem, { borderBottomColor: colors.cardBorder }]}
-            onPress={toggleTheme}
+            onPress={handleToggleThemeMode}
             activeOpacity={0.8}
           >
             <View style={styles.settingRowLeft}>

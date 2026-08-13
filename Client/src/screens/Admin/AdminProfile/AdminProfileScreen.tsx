@@ -12,6 +12,7 @@ import {
 import { User, Task } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
+import { updateUser } from '../../../services/api';
 
 interface AdminProfileScreenProps {
   allFaculty: User[];
@@ -25,6 +26,16 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
   onLogout,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
+
+  const handleToggleThemeMode = async () => {
+    const nextTheme = isDark ? 'light' : 'dark';
+    toggleTheme();
+    try {
+      await updateUser(adminUser.id, { themeMode: nextTheme });
+    } catch (err) {
+      console.warn('Failed to persist theme to backend:', err);
+    }
+  };
 
   // State for administrator details
   const [adminUser, setAdminUser] = useState<User>({
@@ -231,7 +242,7 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
           {/* Appearance Switcher */}
           <TouchableOpacity
             style={[styles.settingRowItem, { borderBottomColor: colors.cardBorder }]}
-            onPress={toggleTheme}
+            onPress={handleToggleThemeMode}
             activeOpacity={0.8}
           >
             <View style={styles.settingRowLeft}>
