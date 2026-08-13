@@ -10,6 +10,8 @@ import {
 import { Task, User } from '../../types';
 import { CalendarStrip } from '../../components/common/CalendarStrip';
 import { CompleteTaskModal } from '../../components/modals/CompleteTaskModal';
+import { useTheme } from '../../context/ThemeContext';
+import { Icon } from '../../components/common/Icon';
 
 interface FacultyScreenProps {
   currentFaculty: User | null;
@@ -26,6 +28,7 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
   onSelectDate,
   onCompleteTask,
 }) => {
+  const { colors } = useTheme();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [targetTask, setTargetTask] = useState<Task | null>(null);
 
@@ -40,15 +43,15 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
   const completedCount = facultyTasks.filter(t => t.status === 'completed').length;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Faculty Profile Card */}
       {currentFaculty && (
-        <View style={styles.profileHeader}>
+        <View style={[styles.profileHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
           <Image source={{ uri: currentFaculty.avatar }} style={styles.profileAvatar} />
           <View style={styles.profileDetails}>
             <Text style={styles.profileTitle}>Faculty Member Portal</Text>
-            <Text style={styles.profileName}>{currentFaculty.name}</Text>
-            <Text style={styles.profileMeta}>
+            <Text style={[styles.profileName, { color: colors.text }]}>{currentFaculty.name}</Text>
+            <Text style={[styles.profileMeta, { color: colors.subText }]}>
               {currentFaculty.department} • {currentFaculty.title}
             </Text>
           </View>
@@ -59,10 +62,10 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
       <CalendarStrip selectedDate={selectedDate} onSelectDate={onSelectDate} />
 
       {/* Schedule Summary Banner */}
-      <View style={styles.summaryBar}>
-        <Text style={styles.summaryText}>
+      <View style={[styles.summaryBar, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        <Text style={[styles.summaryText, { color: colors.subText }]}>
           Day Schedule ({selectedDate}):{' '}
-          <Text style={styles.textWhiteBold}>{facultyTasks.length} Tasks</Text>
+          <Text style={[styles.textWhiteBold, { color: colors.text }]}>{facultyTasks.length} Tasks</Text>
         </Text>
         <View style={styles.badgeRow}>
           <Text style={[styles.miniBadge, styles.badgePending]}>
@@ -81,9 +84,11 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>🎉</Text>
-            <Text style={styles.emptyTitle}>No Tasks Scheduled for This Day</Text>
-            <Text style={styles.emptySubtitle}>
+            <Icon name="academic" size={40} color={colors.secondary} />
+            <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 10 }]}>
+              No Tasks Scheduled for This Day
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.subText }]}>
               You have no assigned tasks on {selectedDate}. Enjoy your free timeline!
             </Text>
           </View>
@@ -102,15 +107,24 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
           }
 
           return (
-            <View style={[styles.taskCard, isCompleted && styles.taskCardCompleted]}>
-              <View style={styles.timeColumn}>
-                <Text style={styles.timeText}>{item.startTime}</Text>
-                <Text style={styles.timeSubtext}>to {item.endTime}</Text>
+            <View
+              style={[
+                styles.taskCard,
+                { backgroundColor: colors.card, borderColor: colors.cardBorder },
+                isCompleted && styles.taskCardCompleted,
+              ]}
+            >
+              <View style={[styles.timeColumn, { borderRightColor: colors.cardBorder }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Icon name="clock" size={12} color={colors.text} />
+                  <Text style={[styles.timeText, { color: colors.text, marginLeft: 4 }]}>{item.startTime}</Text>
+                </View>
+                <Text style={[styles.timeSubtext, { color: colors.mutedText }]}>to {item.endTime}</Text>
               </View>
 
               <View style={styles.cardContent}>
                 <View style={styles.cardHeaderRow}>
-                  <Text style={styles.taskTitle}>{item.title}</Text>
+                  <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
                   <View style={[styles.priorityTag, priorityStyle]}>
                     <Text style={[styles.priorityTagText, priorityTextStyle]}>
                       {item.priority}
@@ -119,34 +133,47 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
                 </View>
 
                 {item.description ? (
-                  <Text style={styles.taskDesc}>{item.description}</Text>
+                  <Text style={[styles.taskDesc, { color: colors.subText }]}>{item.description}</Text>
                 ) : null}
 
-                <Text style={styles.assignedByText}>Assigned by: {item.assignedBy}</Text>
+                <Text style={[styles.assignedByText, { color: colors.mutedText }]}>
+                  Assigned by: {item.assignedBy}
+                </Text>
 
                 {/* Completion Status / Remarks Box */}
                 {isCompleted ? (
                   <View style={styles.completedRemarkBox}>
                     <View style={styles.completedHeaderRow}>
-                      <Text style={styles.completedCheckMark}>✓ Completed</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Icon name="check" size={14} color="#10B981" />
+                        <Text style={[styles.completedCheckMark, { marginLeft: 4 }]}>Completed</Text>
+                      </View>
                       {item.completedAt && (
-                        <Text style={styles.completedTime}>
-                          {new Date(item.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <Text style={[styles.completedTime, { color: colors.mutedText }]}>
+                          {new Date(item.completedAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
                         </Text>
                       )}
                     </View>
-                    <Text style={styles.remarkText}>"{item.completionNote}"</Text>
+                    <Text style={[styles.remarkText, { color: colors.text }]}>"{item.completionNote}"</Text>
                   </View>
                 ) : (
                   <TouchableOpacity
-                    style={styles.completeActionBtn}
+                    style={[styles.completeActionBtn, { backgroundColor: colors.secondary }]}
                     onPress={() => {
                       setTargetTask(item);
                       setCompleteModalVisible(true);
                     }}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.completeActionBtnText}>✓ Mark Completed & Submit Remarks</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="check" size={14} color="#FFFFFF" />
+                      <Text style={[styles.completeActionBtnText, { marginLeft: 6 }]}>
+                        Mark Completed & Submit Remarks
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 )}
               </View>
@@ -172,16 +199,13 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   profileAvatar: {
     width: 44,
@@ -202,30 +226,24 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   profileName: {
-    color: '#F8FAFC',
     fontSize: 16,
     fontWeight: '700',
   },
   profileMeta: {
-    color: '#94A3B8',
     fontSize: 12,
   },
   summaryBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   summaryText: {
-    color: '#94A3B8',
     fontSize: 13,
   },
   textWhiteBold: {
-    color: '#F8FAFC',
     fontWeight: '700',
   },
   badgeRow: {
@@ -253,31 +271,25 @@ const styles = StyleSheet.create({
   },
   taskCard: {
     flexDirection: 'row',
-    backgroundColor: '#0F172A',
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   taskCardCompleted: {
     borderColor: 'rgba(16,185,129,0.3)',
-    backgroundColor: 'rgba(15,23,42,0.85)',
   },
   timeColumn: {
-    width: 75,
+    width: 80,
     borderRightWidth: 1,
-    borderRightColor: '#1E293B',
     paddingRight: 10,
     justifyContent: 'flex-start',
   },
   timeText: {
-    color: '#F8FAFC',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   timeSubtext: {
-    color: '#64748B',
     fontSize: 11,
     marginTop: 2,
   },
@@ -291,7 +303,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   taskTitle: {
-    color: '#F8FAFC',
     fontSize: 15,
     fontWeight: '700',
     flex: 1,
@@ -326,18 +337,15 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
   },
   taskDesc: {
-    color: '#94A3B8',
     fontSize: 13,
     marginTop: 6,
     lineHeight: 18,
   },
   assignedByText: {
-    color: '#64748B',
     fontSize: 11,
     marginTop: 8,
   },
   completeActionBtn: {
-    backgroundColor: '#10B981',
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 10,
@@ -369,11 +377,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   completedTime: {
-    color: '#64748B',
     fontSize: 10,
   },
   remarkText: {
-    color: '#E2E8F0',
     fontSize: 12,
     fontStyle: 'italic',
   },
@@ -381,17 +387,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
   },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
   emptyTitle: {
-    color: '#F8FAFC',
     fontSize: 16,
     fontWeight: '700',
   },
   emptySubtitle: {
-    color: '#64748B',
     fontSize: 13,
     textAlign: 'center',
     marginTop: 4,

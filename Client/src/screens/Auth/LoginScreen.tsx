@@ -138,8 +138,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             onPress={handleGoogleLogin}
             activeOpacity={0.85}
           >
-            <View style={styles.googleBadge}>
-              <Text style={styles.googleBadgeText}>G</Text>
+            <View style={styles.googleIconBox}>
+              <Icon name="google" size={20} />
             </View>
             <Text style={[styles.googleBtnText, { color: colors.googleBtnText }]}>
               Sign in with Google Workspace
@@ -224,38 +224,50 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               </Text>
 
               <Text style={[styles.label, { color: colors.subText }]}>Faculty Reg. No. / Admin ID</Text>
-              <TextInput
+              <View
                 style={[
-                  styles.input,
+                  styles.inputWrapper,
                   {
                     backgroundColor: colors.inputBg,
                     borderColor: colors.inputBorder,
-                    color: colors.text,
                   },
                 ]}
-                value={regNo}
-                onChangeText={setRegNo}
-                placeholder="e.g. ADM-2026-001"
-                placeholderTextColor={colors.mutedText}
-                autoCapitalize="characters"
-              />
+              >
+                <View style={styles.inputIconBox}>
+                  <Icon name="user" size={16} color={colors.subText} />
+                </View>
+                <TextInput
+                  style={[styles.inputWithIcon, { color: colors.text }]}
+                  value={regNo}
+                  onChangeText={setRegNo}
+                  placeholder="e.g. ADM-2026-001"
+                  placeholderTextColor={colors.mutedText}
+                  autoCapitalize="characters"
+                />
+              </View>
 
               <Text style={[styles.label, { color: colors.subText }]}>Password</Text>
-              <TextInput
+              <View
                 style={[
-                  styles.input,
+                  styles.inputWrapper,
                   {
                     backgroundColor: colors.inputBg,
                     borderColor: colors.inputBorder,
-                    color: colors.text,
                   },
                 ]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder="••••••••"
-                placeholderTextColor={colors.mutedText}
-                secureTextEntry
-              />
+              >
+                <View style={styles.inputIconBox}>
+                  <Icon name="lock" size={16} color={colors.subText} />
+                </View>
+                <TextInput
+                  style={[styles.inputWithIcon, { color: colors.text }]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.mutedText}
+                  secureTextEntry
+                />
+              </View>
             </View>
           ) : (
             <View style={styles.formContainer}>
@@ -319,9 +331,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             onPress={handleLogin}
             activeOpacity={0.85}
           >
-            <Text style={styles.submitBtnText}>
-              Login to {selectedRole === 'admin' ? 'Admin Workspace' : 'Faculty Workspace'} →
-            </Text>
+            <View style={styles.submitBtnRow}>
+              <Text style={styles.submitBtnText}>
+                Login to {selectedRole === 'admin' ? 'Admin Workspace' : 'Faculty Workspace'}
+              </Text>
+              <View style={{ marginLeft: 8 }}>
+                <Icon name="arrow-right" size={16} color="#FFFFFF" />
+              </View>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -405,19 +422,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
   },
-  googleBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#4285F4',
-    alignItems: 'center',
-    justifyContent: 'center',
+  googleIconBox: {
     marginRight: 10,
-  },
-  googleBadgeText: {
-    color: '#FFFFFF',
-    fontWeight: '900',
-    fontSize: 14,
   },
   googleBtnText: {
     fontSize: 14,
@@ -474,12 +480,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: 10,
   },
-  input: {
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 12,
-    paddingHorizontal: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+  },
+  inputIconBox: {
+    marginRight: 8,
+  },
+  inputWithIcon: {
+    flex: 1,
     paddingVertical: 12,
     fontSize: 14,
-    borderWidth: 1,
   },
   facultyCard: {
     flexDirection: 'row',
@@ -517,6 +531,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     marginTop: 8,
+  },
+  submitBtnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitBtnText: {
     color: '#FFFFFF',

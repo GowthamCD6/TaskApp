@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { User, Task, Priority, AdminTab, FacultyTab } from '../types';
 import { fetchUsers, fetchTasks, createTask, completeTask, createUser } from '../services/api';
-import { Header } from '../components/common/Header';
 import { TabBar } from '../components/navigation/TabBar';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
-import { AdminScreen } from '../screens/Admin/AdminScreen';
+import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
 import { AssignTaskScreen } from '../screens/Admin/AssignTaskScreen';
-import { FacultyDirectoryScreen } from '../screens/Admin/FacultyDirectoryScreen';
+import { FacultyDirectoryScreen } from '../screens/Admin/FacultyDirectory/FacultyDirectoryScreen';
 import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalyticsScreen';
+import { AdminProfileScreen } from '../screens/Admin/AdminProfileScreen';
 import { FacultyScreen } from '../screens/Faculty/FacultyScreen';
 import { TaskHistoryScreen } from '../screens/Faculty/TaskHistoryScreen';
 import { FacultyProfileScreen } from '../screens/Faculty/FacultyProfileScreen';
@@ -40,6 +40,7 @@ interface AdminNavigatorProps {
   }) => void;
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
+  onLogout: () => void;
 }
 
 export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
@@ -51,6 +52,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
   onAddFaculty,
   activeTab,
   onTabChange,
+  onLogout,
 }) => {
   const { colors } = useTheme();
   const [preselectedFacultyId, setPreselectedFacultyId] = useState<string>('');
@@ -95,6 +97,14 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
             allFaculty={allFaculty}
           />
         );
+      case 'profile':
+        return (
+          <AdminProfileScreen
+            allFaculty={allFaculty}
+            allTasks={allTasks}
+            onLogout={onLogout}
+          />
+        );
       case 'schedule':
       default:
         return (
@@ -105,6 +115,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
             onSelectDate={onSelectDate}
             onAssignTask={onAssignTask}
             onNavigateToAssignScreen={() => onTabChange('assign')}
+            onLogout={onLogout}
           />
         );
     }
@@ -127,6 +138,7 @@ interface FacultyNavigatorProps {
   onSelectDate: (date: string) => void;
   onCompleteTask: (taskId: string, note: string) => void;
   activeTab: FacultyTab;
+  onLogout: () => void;
 }
 
 export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
@@ -136,6 +148,7 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
   onSelectDate,
   onCompleteTask,
   activeTab,
+  onLogout,
 }) => {
   const { colors } = useTheme();
 
@@ -153,6 +166,7 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
           <FacultyProfileScreen
             currentFaculty={currentFaculty}
             allTasks={allTasks}
+            onLogout={onLogout}
           />
         );
       case 'schedule':
@@ -308,14 +322,6 @@ export const AppNavigator: React.FC = () => {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
-      {/* Navigation Header Bar */}
-      <Header
-        currentUser={currentUser}
-        allFaculty={allFaculty}
-        onFacultySwitch={faculty => setCurrentUser(faculty)}
-        onLogout={handleLogout}
-      />
-
       {/* Active Route Body */}
       <View style={styles.contentBody}>
         {currentUser.role === 'admin' ? (
@@ -328,6 +334,7 @@ export const AppNavigator: React.FC = () => {
             onAddFaculty={handleAddFaculty}
             activeTab={activeAdminTab}
             onTabChange={setActiveAdminTab}
+            onLogout={handleLogout}
           />
         ) : (
           <FacultyNavigator
@@ -337,6 +344,7 @@ export const AppNavigator: React.FC = () => {
             onSelectDate={setSelectedDate}
             onCompleteTask={handleCompleteTask}
             activeTab={activeFacultyTab}
+            onLogout={handleLogout}
           />
         )}
       </View>

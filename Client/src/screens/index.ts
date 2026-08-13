@@ -1,7 +1,7 @@
 export { LoginScreen } from './Auth/LoginScreen';
-export { AdminScreen } from './Admin/AdminScreen';
+export { AdminScreen } from './Admin/Dashboard/AdminScreen';
 export { AssignTaskScreen } from './Admin/AssignTaskScreen';
-export { FacultyDirectoryScreen } from './Admin/FacultyDirectoryScreen';
+export { FacultyDirectoryScreen } from './Admin/FacultyDirectory/FacultyDirectoryScreen';
 export { TaskAnalyticsScreen } from './Admin/TaskAnalyticsScreen';
 
 export { FacultyScreen } from './Faculty/FacultyScreen';

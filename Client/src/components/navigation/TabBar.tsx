@@ -27,6 +27,7 @@ export const TabBar: React.FC<TabBarProps> = ({
       { id: 'assign', label: 'Assign Task', icon: 'plus' },
       { id: 'directory', label: 'Faculty List', icon: 'users' },
       { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+      { id: 'profile', label: 'Admin Profile', icon: 'shield' },
     ];
 
     return (
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderTopWidth: 1,
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   tabItem: {
     flex: 1,
@@ -150,7 +151,8 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
+    textAlign: 'center',
   },
   activeDot: {
     width: 4,
