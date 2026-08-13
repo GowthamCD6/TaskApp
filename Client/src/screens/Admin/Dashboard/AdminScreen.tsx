@@ -110,7 +110,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
       {/* Overview Stat Metrics Cards */}
       <View style={styles.metricsGrid}>
-        <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.totalMetricBorder]}>
+        <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <View style={styles.metricHeader}>
             <View style={[styles.iconBadge, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
               <Icon name="calendar" size={14} color={colors.primary} />
@@ -120,7 +120,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           <Text style={[styles.metricLabel, { color: colors.subText }]}>Total Scheduled</Text>
         </View>
 
-        <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.pendingMetricBorder]}>
+        <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <View style={styles.metricHeader}>
             <View style={[styles.iconBadge, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
               <Icon name="clock" size={14} color="#F59E0B" />
@@ -130,7 +130,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           <Text style={[styles.metricLabel, { color: colors.subText }]}>Pending Action</Text>
         </View>
 
-        <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.completedMetricBorder]}>
+        <View style={[styles.metricCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <View style={styles.metricHeader}>
             <View style={[styles.iconBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
               <Icon name="check" size={14} color="#10B981" />
@@ -195,7 +195,6 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
               style={[
                 styles.taskCardItem,
                 { backgroundColor: colors.card, borderColor: colors.cardBorder },
-                isCompleted ? styles.taskCardCompletedBorder : styles.taskCardPendingBorder,
               ]}
             >
               {/* Time Column */}
@@ -354,7 +353,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 14,
     marginRight: 8,
-    borderLeftWidth: 4,
     borderWidth: 1,
   },
   metricHeader: {
@@ -368,15 +366,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  totalMetricBorder: {
-    borderLeftColor: '#6366F1',
-  },
-  pendingMetricBorder: {
-    borderLeftColor: '#F59E0B',
-  },
-  completedMetricBorder: {
-    borderLeftColor: '#10B981',
   },
   metricNumber: {
     fontSize: 20,
@@ -403,13 +392,6 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderLeftWidth: 4,
-  },
-  taskCardPendingBorder: {
-    borderLeftColor: '#F59E0B',
-  },
-  taskCardCompletedBorder: {
-    borderLeftColor: '#10B981',
   },
   timeColumnBox: {
     width: 82,

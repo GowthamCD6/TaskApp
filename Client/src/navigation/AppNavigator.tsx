@@ -7,7 +7,7 @@ import { LoginScreen } from '../screens/Auth/LoginScreen';
 import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
 import { AssignTaskScreen } from '../screens/Admin/AssignTask/AssignTaskScreen';
 import { FacultyDirectoryScreen } from '../screens/Admin/FacultyDirectory/FacultyDirectoryScreen';
-import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalyticsScreen';
+import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalytics/TaskAnalyticsScreen';
 import { AdminProfileScreen } from '../screens/Admin/AdminProfileScreen';
 import { FacultyScreen } from '../screens/Faculty/FacultyScreen';
 import { TaskHistoryScreen } from '../screens/Faculty/TaskHistoryScreen';
@@ -104,6 +104,8 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
           <TaskAnalyticsScreen
             allTasks={allTasks}
             allFaculty={allFaculty}
+            selectedDate={selectedDate}
+            onSelectDate={onSelectDate}
           />
         );
       case 'profile':
