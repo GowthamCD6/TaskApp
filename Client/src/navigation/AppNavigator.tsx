@@ -10,7 +10,7 @@ import { FacultyDirectoryScreen } from '../screens/Admin/FacultyDirectory/Facult
 import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalytics/TaskAnalyticsScreen';
 import { AdminProfileScreen } from '../screens/Admin/AdminProfile/AdminProfileScreen';
 import { FacultyScreen } from '../screens/Faculty/FacultyDashboard/FacultyScreen';
-import { TaskHistoryScreen } from '../screens/Faculty/TaskHistoryScreen';
+import { TaskHistoryScreen } from '../screens/Faculty/TaskHistory/TaskHistoryScreen';
 import { FacultyProfileScreen } from '../screens/Faculty/FacultyProfileScreen';
 import { useTheme } from '../context/ThemeContext';
 

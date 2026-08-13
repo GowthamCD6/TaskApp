@@ -5,5 +5,5 @@ export { FacultyDirectoryScreen } from './Admin/FacultyDirectory/FacultyDirector
 export { TaskAnalyticsScreen } from './Admin/TaskAnalytics/TaskAnalyticsScreen';
 
 export { FacultyScreen } from './Faculty/FacultyDashboard/FacultyScreen';
-export { TaskHistoryScreen } from './Faculty/TaskHistoryScreen';
+export { TaskHistoryScreen } from './Faculty/TaskHistory/TaskHistoryScreen';
 export { FacultyProfileScreen } from './Faculty/FacultyProfileScreen';
