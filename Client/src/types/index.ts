@@ -2,6 +2,7 @@ export type UserRole = 'admin' | 'faculty';
 
 export interface User {
   id: string;
+  googleId?: string;
   name: string;
   email: string;
   role: UserRole;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { User, Task } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
@@ -91,11 +91,15 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
           <View style={[styles.coverAccent, { backgroundColor: colors.secondary }]} />
 
           <View style={styles.heroBody}>
-            {/* Avatar Circle */}
+            {/* Avatar Circle or Image */}
             <View style={styles.avatarWrapper}>
-              <View style={[styles.avatarCircle, { backgroundColor: colors.secondary }]}>
-                <Text style={styles.avatarInitials}>{initials}</Text>
-              </View>
+              {currentFaculty.avatar ? (
+                <Image source={{ uri: currentFaculty.avatar }} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarCircle, { backgroundColor: colors.secondary }]}>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
+                </View>
+              )}
               <View style={[styles.statusIndicatorDot, { borderColor: colors.card }]} />
             </View>
 
@@ -332,6 +336,13 @@ const styles = StyleSheet.create({
     borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  avatarImage: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     borderWidth: 3,
     borderColor: '#FFFFFF',
   },

@@ -21,9 +21,11 @@ interface EditFacultyModalProps {
     name: string;
     email: string;
     department: string;
+    title?: string;
     regNo: string;
     password?: string;
   }) => void;
+  onDeleteFaculty?: (id: string) => void;
 }
 
 export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
@@ -31,11 +33,13 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
   faculty,
   onClose,
   onSaveFaculty,
+  onDeleteFaculty,
 }) => {
   const { colors, isDark } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [department, setDepartment] = useState('');
+  const [title, setTitle] = useState('');
   const [regNo, setRegNo] = useState('');
   const [password, setPassword] = useState('');
 
@@ -44,6 +48,7 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
       setName(faculty.name || '');
       setEmail(faculty.email || '');
       setDepartment(faculty.department || '');
+      setTitle(faculty.title || 'Assistant Professor');
       setRegNo(faculty.regNo || 'FAC-2026-101');
       setPassword(faculty.password || '123456');
     }
@@ -69,6 +74,7 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
         name: name.trim(),
         email: email.trim(),
         department: department.trim(),
+        title: title.trim() || 'Assistant Professor',
         regNo: regNo.trim() || 'FAC-2026-101',
         password: password.trim() || '123456',
       });
@@ -105,6 +111,15 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
             value={name}
             onChangeText={setName}
             placeholder="e.g. Dr. Sarah Smith"
+            placeholderTextColor={colors.mutedText}
+          />
+
+          <Text style={[styles.label, { color: colors.subText }]}>Academic Title / Designation *</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }]}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="e.g. Associate Professor / Department Head"
             placeholderTextColor={colors.mutedText}
           />
 
@@ -154,6 +169,35 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
 
           {/* Action Buttons */}
           <View style={styles.actionRow}>
+            {onDeleteFaculty && (
+              <TouchableOpacity
+                style={[styles.deleteModalIconBtn, { backgroundColor: '#FEF2F2', borderColor: '#FCA5A5' }]}
+                onPress={() => {
+                  Alert.alert(
+                    'Delete Faculty Member',
+                    `Are you sure you want to permanently delete ${name} from the directory?`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: () => {
+                          const targetId = faculty.id;
+                          onClose();
+                          onDeleteFaculty(targetId);
+                        },
+                      },
+                    ]
+                  );
+                }}
+                activeOpacity={0.8}
+              >
+                <Icon name="trash" size={16} color="#EF4444" />
+              </TouchableOpacity>
+            )}
+
+            <View style={{ flex: 1 }} />
+
             <TouchableOpacity
               style={[styles.cancelBtn, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]}
               onPress={onClose}
@@ -256,5 +300,13 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+  deleteModalIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

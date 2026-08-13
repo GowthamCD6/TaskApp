@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { User, Task, Priority, AdminTab, FacultyTab, NotificationItem } from '../types';
-import { fetchUsers, fetchTasks, createTask, completeTask, createUser, updateUser, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
+import { fetchUsers, fetchTasks, createTask, completeTask, createUser, updateUser, deleteUser, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { TabBar } from '../components/navigation/TabBar';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
 import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
@@ -46,6 +46,7 @@ interface AdminNavigatorProps {
     department: string;
     regNo: string;
   }) => void;
+  onDeleteFaculty?: (id: string) => void;
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   onLogout: () => void;
@@ -59,6 +60,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
   onAssignTask,
   onAddFaculty,
   onUpdateFaculty,
+  onDeleteFaculty,
   activeTab,
   onTabChange,
   onLogout,
@@ -98,6 +100,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
             onAddFaculty={onAddFaculty}
             onAssignTaskForFaculty={handleAssignTaskForFaculty}
             onUpdateFaculty={onUpdateFaculty}
+            onDeleteFaculty={onDeleteFaculty}
           />
         );
       case 'analytics':
@@ -381,6 +384,16 @@ export const AppNavigator: React.FC = () => {
     }
   };
 
+  const handleDeleteFaculty = async (id: string) => {
+    try {
+      await deleteUser(id);
+      setAllFaculty(prev => prev.filter(f => f.id !== id));
+      Alert.alert('Faculty Removed', 'Faculty member has been removed from the directory.');
+    } catch {
+      Alert.alert('Error', 'Failed to delete faculty member.');
+    }
+  };
+
   // Faculty Handlers
   const handleCompleteTask = async (taskId: string, note: string) => {
     try {
@@ -428,6 +441,7 @@ export const AppNavigator: React.FC = () => {
             onAssignTask={handleAssignTask}
             onAddFaculty={handleAddFaculty}
             onUpdateFaculty={handleUpdateFaculty}
+            onDeleteFaculty={handleDeleteFaculty}
             activeTab={activeAdminTab}
             onTabChange={setActiveAdminTab}
             onLogout={handleLogout}
