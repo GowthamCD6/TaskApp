@@ -14,7 +14,12 @@ const pool = mysql.createPool({
   } : false,
   waitForConnections: true,
   connectionLimit: 10,
+  maxIdle: 10,
+  idleTimeout: 60000, // release idle connections after 60s
   queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000, // 10 seconds keep-alive heartbeat to prevent TiDB connection drop
+  connectTimeout: 30000, // 30 seconds connection timeout
 });
 
 // Utility to test connection

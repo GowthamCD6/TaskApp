@@ -61,14 +61,14 @@ let localUsers: User[] = [
   },
   {
     id: 'admin-1',
-    name: 'Dean James Wilson',
-    email: 'admin.dean@university.edu',
-    regNo: 'ADM-2026-001',
+    name: 'Gowtham',
+    email: 'gowthamcd.it24@bitsathy.ac.in',
+    regNo: '242IT163',
     password: '123456',
     role: 'admin',
-    department: 'Academic Administration',
+    department: 'Information Technology',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-    title: 'Chief Academic Officer',
+    title: 'System Administrator',
   },
 ];
 
@@ -138,6 +138,43 @@ let localTasks: Task[] = [
     createdAt: new Date().toISOString(),
   },
 ];
+
+export const loginUser = async (credentials: {
+  regNo?: string;
+  email?: string;
+  password?: string;
+  role?: string;
+  id?: string;
+}): Promise<User> => {
+  try {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+      signal: AbortSignal.timeout(3000),
+    });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data;
+    }
+  } catch {
+    // Fallback to local memory matching
+  }
+
+  if (credentials.id) {
+    const found = localUsers.find(u => u.id === credentials.id);
+    if (found) return found;
+  }
+  if (credentials.regNo) {
+    const found = localUsers.find(u => u.regNo?.toLowerCase() === credentials.regNo?.toLowerCase());
+    if (found) return found;
+  }
+  if (credentials.role) {
+    const found = localUsers.find(u => u.role.toLowerCase() === credentials.role?.toLowerCase());
+    if (found) return found;
+  }
+  return localUsers[0];
+};
 
 export const fetchUsers = async (role?: string): Promise<User[]> => {
   try {

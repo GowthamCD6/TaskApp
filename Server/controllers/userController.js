@@ -1,10 +1,26 @@
 const { pool } = require('../config/db');
 
+// Helper to format user row
+const formatUserRow = (row) => ({
+  id: row.id,
+  googleId: row.google_id || null,
+  regNo: row.reg_no || (row.role === 'admin' ? 'ADM-2026-001' : 'FAC-2026-101'),
+  name: row.name,
+  email: row.email,
+  role: row.role,
+  department: row.department || 'Academic Department',
+  title: row.title || 'Faculty Member',
+  avatar: row.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+  phone: row.phone || '+1 (555) 123-4567',
+  officeHours: row.office_hours || 'Mon - Fri, 09:00 AM - 05:00 PM',
+  createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+});
+
 // GET /api/users
 const getUsers = async (req, res) => {
   try {
     const { role } = req.query;
-    let query = 'SELECT id, google_id as googleId, name, email, role, department, title, avatar, created_at as createdAt FROM users';
+    let query = 'SELECT * FROM users';
     const params = [];
 
     if (role) {
@@ -12,9 +28,10 @@ const getUsers = async (req, res) => {
       params.push(role);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY created_at ASC';
 
-    const [users] = await pool.query(query, params);
+    const [rows] = await pool.query(query, params);
+    const users = rows.map(formatUserRow);
 
     res.status(200).json({
       status: 'success',
@@ -34,12 +51,9 @@ const getUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
-    const [users] = await pool.query(
-      'SELECT id, google_id as googleId, name, email, role, department, title, avatar, created_at as createdAt FROM users WHERE id = ?',
-      [id]
-    );
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
 
-    if (users.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({
         status: 'error',
         message: 'User not found',
@@ -48,7 +62,7 @@ const getUserById = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      data: users[0],
+      data: formatUserRow(rows[0]),
     });
   } catch (err) {
     console.error('Error fetching user by ID:', err);
@@ -62,7 +76,7 @@ const getUserById = async (req, res) => {
 // POST /api/users (Admin adds a new Faculty member)
 const createUser = async (req, res) => {
   try {
-    const { name, email, department, title, avatar } = req.body;
+    const { name, email, department, title, avatar, phone, officeHours, regNo } = req.body;
 
     if (!name || !email || !department) {
       return res.status(400).json({
@@ -82,34 +96,43 @@ const createUser = async (req, res) => {
       });
     }
 
+    const newRegNo = regNo ? regNo.trim() : `FAC-2026-${Math.floor(100 + Math.random() * 900)}`;
     const newUser = {
       id: `fac-${Date.now()}`,
+      reg_no: newRegNo,
+      password: '123456',
       name: name.trim(),
       email: email.trim().toLowerCase(),
       role: 'faculty',
       department: department.trim(),
       title: title ? title.trim() : 'Assistant Professor',
       avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      phone: phone || '+1 (555) 123-4567',
+      office_hours: officeHours || 'Mon - Fri, 09:00 AM - 05:00 PM',
     };
 
     await pool.query(
-      `INSERT INTO users (id, name, email, role, department, title, avatar)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO users (id, reg_no, password, name, email, role, department, title, avatar, phone, office_hours)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newUser.id,
+        newUser.reg_no,
+        newUser.password,
         newUser.name,
         newUser.email,
         newUser.role,
         newUser.department,
         newUser.title,
         newUser.avatar,
+        newUser.phone,
+        newUser.office_hours,
       ]
     );
 
     res.status(201).json({
       status: 'success',
-      message: `Faculty member ${newUser.name} created successfully`,
-      data: newUser,
+      message: 'Faculty user created successfully',
+      data: formatUserRow({ ...newUser, created_at: new Date() }),
     });
   } catch (err) {
     console.error('Error creating user:', err);
