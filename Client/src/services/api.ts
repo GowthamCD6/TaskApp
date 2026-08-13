@@ -1,8 +1,9 @@
 import { Platform } from 'react-native';
-import { User, Task } from '../types';
+import { User, Task, NotificationItem } from '../types';
 
-// For Android emulator 10.0.2.2, for iOS/Web localhost
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
+// Connect to backend server on laptop IP address (10.150.254.92)
+const SERVER_IP = '10.150.254.92';
+const BASE_URL = `http://${SERVER_IP}:5000/api`;
 
 // Local fallback mock database in case backend is offline
 const formatDate = (offsetDays = 0) => {
@@ -176,6 +177,37 @@ export const loginUser = async (credentials: {
   return localUsers[0];
 };
 
+export const loginWithGoogle = async (googleUser?: { id?: string; email?: string; name?: string; avatar?: string }): Promise<User> => {
+  try {
+    const response = await fetch(`${BASE_URL}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        googleUser: googleUser || {
+          id: `google-user-${Date.now()}`,
+          email: 'gowthamcd.it24@bitsathy.ac.in',
+          name: 'Gowtham (Google Workspace)',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+        },
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data;
+    }
+  } catch (err) {
+    console.warn('Google auth API call error, falling back:', err);
+  }
+
+  // Fallback Google User account
+  const defaultUser = localUsers.find(u => u.role === 'admin') || localUsers[0];
+  return {
+    ...defaultUser,
+    googleId: `google-123456`,
+  };
+};
+
 export const fetchUsers = async (role?: string): Promise<User[]> => {
   try {
     const url = role ? `${BASE_URL}/users?role=${role}` : `${BASE_URL}/users`;
@@ -317,4 +349,98 @@ export const completeTask = async (taskId: string, completionNote: string): Prom
     return localTasks[taskIndex];
   }
   throw new Error('Task not found');
+};
+
+export const updateUser = async (id: string, userData: Partial<User>): Promise<User> => {
+  try {
+    const response = await fetch(`${BASE_URL}/users/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data;
+    }
+  } catch {
+    // Fallback local memory
+  }
+
+  const index = localUsers.findIndex(u => u.id === id);
+  if (index !== -1) {
+    localUsers[index] = { ...localUsers[index], ...userData };
+    return localUsers[index];
+  }
+  throw new Error('User not found');
+};
+
+export const fetchNotifications = async (userId?: string): Promise<NotificationItem[]> => {
+  try {
+    const url = userId ? `${BASE_URL}/notifications?userId=${userId}` : `${BASE_URL}/notifications`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data;
+    }
+  } catch {
+    // Fallback local memory
+  }
+
+  return [
+    {
+      id: 'notif-1',
+      title: 'Urgent Room Change Notice',
+      message: 'The 2:00 PM Data Structures lecture has been moved to Auditorium 302 due to maintenance.',
+      type: 'urgent',
+      timestamp: '10 mins ago',
+      isRead: false,
+      senderName: 'Academic Office',
+    },
+    {
+      id: 'notif-2',
+      title: 'New Task Assigned by Dean',
+      message: 'You have been assigned to evaluate mid-term examination answer scripts.',
+      type: 'task_assigned',
+      timestamp: '1 hour ago',
+      isRead: false,
+      senderName: 'Dean James Wilson',
+    },
+    {
+      id: 'notif-3',
+      title: 'Upcoming Lecture Reminder',
+      message: 'Advanced Software Engineering lecture starts in 30 minutes at Room 104.',
+      type: 'reminder',
+      timestamp: '2 hours ago',
+      isRead: true,
+      senderName: 'System Reminder',
+    },
+  ];
+};
+
+export const markNotificationRead = async (notificationId: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${BASE_URL}/notifications/${notificationId}/read`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+export const markAllNotificationsRead = async (userId?: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${BASE_URL}/notifications/read-all`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+      signal: AbortSignal.timeout(5000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 };

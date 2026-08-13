@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,13 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { User, UserRole } from '../../types';
 import { useTheme } from '../../context/ThemeContext';
 import { Icon } from '../../components/common/Icon';
-import { loginUser } from '../../services/api';
+import { loginUser, loginWithGoogle } from '../../services/api';
 
 interface LoginScreenProps {
   allFaculty: User[];
@@ -29,9 +31,61 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 }) => {
   const { isDark, colors, toggleTheme } = useTheme();
   const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string>(allFaculty[0]?.id || '');
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>(allFaculty[0]?.id || 'fac-1');
   const [regNo, setRegNo] = useState<string>('242IT163');
   const [password, setPassword] = useState<string>('123456');
+
+  // Google Account Chooser Modal State
+  const [showGoogleModal, setShowGoogleModal] = useState<boolean>(false);
+  const [customGoogleEmail, setCustomGoogleEmail] = useState<string>('');
+
+  // Optional: Place your Google Cloud Console Web Client ID here (from https://console.cloud.google.com/apis/credentials)
+  const GOOGLE_WEB_CLIENT_ID = '';
+
+  useEffect(() => {
+    try {
+      if (GOOGLE_WEB_CLIENT_ID) {
+        GoogleSignin.configure({
+          webClientId: GOOGLE_WEB_CLIENT_ID,
+          scopes: ['email', 'profile'],
+          offlineAccess: true,
+        });
+      } else {
+        GoogleSignin.configure({
+          scopes: ['email', 'profile'],
+        });
+      }
+    } catch (err) {
+      console.warn('GoogleSignin configure warning:', err);
+    }
+  }, []);
+
+  const handleNativeGoogleSignIn = async () => {
+    setIsLoggingIn(true);
+    try {
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const response = await GoogleSignin.signIn();
+      const googleUser = (response as any)?.data?.user || (response as any)?.user;
+
+      if (googleUser && googleUser.email) {
+        const authenticatedUser = await loginWithGoogle({
+          id: googleUser.id,
+          email: googleUser.email,
+          name: googleUser.name || googleUser.email.split('@')[0],
+          avatar: googleUser.photo,
+        });
+        onLoginSuccess(authenticatedUser);
+        return;
+      }
+    } catch (error: any) {
+      console.warn('Native Google Sign-In notice:', error?.message || error);
+    } finally {
+      setIsLoggingIn(false);
+    }
+
+    // Open Google Account Chooser modal directly so user can select account
+    setShowGoogleModal(true);
+  };
 
   const adminUser: User = {
     id: 'admin-1',
@@ -51,13 +105,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     try {
       let payload = {};
       if (selectedRole === 'admin') {
-        payload = { regNo: regNo.trim() || 'ADM-2026-001', password, role: 'admin' };
+        payload = { regNo: regNo.trim() || '242IT163', password: password || '123456', role: 'admin' };
       } else {
         const faculty = allFaculty.find(f => f.id === selectedFacultyId) || allFaculty[0];
         payload = {
           id: faculty?.id || selectedFacultyId,
           regNo: faculty?.regNo || regNo || 'FAC-2026-101',
-          password,
+          password: password || '123456',
           role: 'faculty',
         };
       }
@@ -77,21 +131,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleSelectGoogleAccount = async (account: { email: string; name: string; avatar?: string; role?: string }) => {
+    setShowGoogleModal(false);
     setIsLoggingIn(true);
     try {
-      const payload =
-        selectedRole === 'admin'
-          ? { regNo: 'ADM-2026-001', role: 'admin' }
-          : { id: selectedFacultyId, role: 'faculty' };
-
-      const authenticatedUser = await loginUser(payload);
+      const authenticatedUser = await loginWithGoogle({
+        email: account.email,
+        name: account.name,
+        avatar: account.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+      });
       onLoginSuccess(authenticatedUser);
-    } catch {
-      if (selectedRole === 'admin') {
+    } catch (err) {
+      console.warn('Google login error:', err);
+      if (account.role === 'admin' || account.email.includes('gowtham')) {
         onLoginSuccess(adminUser);
       } else {
-        const faculty = allFaculty.find(f => f.id === selectedFacultyId) || allFaculty[0];
+        const faculty = allFaculty.find(f => f.email.toLowerCase() === account.email.toLowerCase()) || allFaculty[0];
         onLoginSuccess(faculty || adminUser);
       }
     } finally {
@@ -159,7 +214,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 borderColor: colors.googleBtnBorder,
               },
             ]}
-            onPress={handleGoogleLogin}
+            onPress={handleNativeGoogleSignIn}
             activeOpacity={0.85}
           >
             <View style={styles.googleIconBox}>
@@ -321,6 +376,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       onPress={() => {
                         setSelectedFacultyId(item.id);
                         setRegNo(item.regNo || 'FAC-2026-101');
+                        if (!password) setPassword('123456');
                       }}
                       activeOpacity={0.8}
                     >
@@ -340,6 +396,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                   );
                 }}
               />
+
+              <Text style={[styles.label, { color: colors.subText }]}>Password (Default: 123456)</Text>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  {
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.inputBorder,
+                  },
+                ]}
+              >
+                <View style={styles.inputIconBox}>
+                  <Icon name="lock" size={16} color={colors.subText} />
+                </View>
+                <TextInput
+                  style={[styles.inputWithIcon, { color: colors.text }]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="123456"
+                  placeholderTextColor={colors.mutedText}
+                  secureTextEntry
+                />
+              </View>
             </View>
           )}
 
@@ -378,6 +457,91 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </Text>
         </View>
       </ScrollView>
+
+      {/* Google Account Selection Modal */}
+      <Modal
+        visible={showGoogleModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowGoogleModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            <View style={styles.googleModalHeader}>
+              <View style={styles.googleModalLogoCircle}>
+                <Icon name="google" size={24} />
+              </View>
+              <Text style={[styles.googleModalTitle, { color: colors.text }]}>Choose a Google Account</Text>
+              <Text style={[styles.googleModalSub, { color: colors.subText }]}>
+                to continue to TaskAssign Portal (10.150.254.92)
+              </Text>
+            </View>
+
+            <ScrollView style={styles.accountList} showsVerticalScrollIndicator={false}>
+              {/* Admin Account */}
+              <TouchableOpacity
+                style={[styles.accountRow, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}
+                onPress={() => handleSelectGoogleAccount({ name: 'Gowtham', email: 'gowthamcd.it24@bitsathy.ac.in', role: 'admin' })}
+                activeOpacity={0.8}
+              >
+                <Image source={{ uri: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150' }} style={styles.accountAvatar} />
+                <View style={styles.accountMeta}>
+                  <Text style={[styles.accountName, { color: colors.text }]}>Gowtham (Admin)</Text>
+                  <Text style={[styles.accountEmail, { color: colors.subText }]}>gowthamcd.it24@bitsathy.ac.in</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Faculty Accounts */}
+              {allFaculty.map(f => (
+                <TouchableOpacity
+                  key={f.id}
+                  style={[styles.accountRow, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}
+                  onPress={() => handleSelectGoogleAccount({ name: f.name, email: f.email, avatar: f.avatar, role: 'faculty' })}
+                  activeOpacity={0.8}
+                >
+                  <Image source={{ uri: f.avatar }} style={styles.accountAvatar} />
+                  <View style={styles.accountMeta}>
+                    <Text style={[styles.accountName, { color: colors.text }]}>{f.name}</Text>
+                    <Text style={[styles.accountEmail, { color: colors.subText }]}>{f.email}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+
+              {/* Custom Google Email Input */}
+              <Text style={[styles.label, { color: colors.subText, marginTop: 14 }]}>Use another account</Text>
+              <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, marginBottom: 12 }]}>
+                <TextInput
+                  style={[styles.inputWithIcon, { color: colors.text }]}
+                  value={customGoogleEmail}
+                  onChangeText={setCustomGoogleEmail}
+                  placeholder="your.email@university.edu"
+                  placeholderTextColor={colors.mutedText}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+                <TouchableOpacity
+                  style={[styles.customGoBtn, { backgroundColor: colors.primary }]}
+                  onPress={() => {
+                    if (customGoogleEmail.trim()) {
+                      handleSelectGoogleAccount({ name: customGoogleEmail.split('@')[0], email: customGoogleEmail.trim() });
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>Continue</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.cancelModalBtn}
+              onPress={() => setShowGoogleModal(false)}
+            >
+              <Text style={[styles.cancelModalText, { color: colors.subText }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 };
@@ -577,5 +741,89 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxHeight: '80%',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  googleModalHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  googleModalLogoCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F1F3F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  googleModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  googleModalSub: {
+    fontSize: 12,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  accountList: {
+    maxHeight: 320,
+    marginVertical: 8,
+  },
+  accountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  accountAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 12,
+  },
+  accountMeta: {
+    flex: 1,
+  },
+  accountName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  accountEmail: {
+    fontSize: 12,
+  },
+  customGoBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  cancelModalBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  cancelModalText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

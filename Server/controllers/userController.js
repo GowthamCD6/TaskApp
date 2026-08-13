@@ -143,8 +143,64 @@ const createUser = async (req, res) => {
   }
 };
 
+// PUT /api/users/:id (Update existing user profile)
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, department, title, avatar, phone, officeHours, regNo } = req.body;
+
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    const current = rows[0];
+    const updatedName = name !== undefined ? name.trim() : current.name;
+    const updatedEmail = email !== undefined ? email.trim().toLowerCase() : current.email;
+    const updatedDepartment = department !== undefined ? department.trim() : current.department;
+    const updatedTitle = title !== undefined ? title.trim() : current.title;
+    const updatedAvatar = avatar !== undefined ? avatar : current.avatar;
+    const updatedPhone = phone !== undefined ? phone : current.phone;
+    const updatedOfficeHours = officeHours !== undefined ? officeHours : current.office_hours;
+    const updatedRegNo = regNo !== undefined ? regNo.trim() : current.reg_no;
+
+    await pool.query(
+      `UPDATE users SET name = ?, email = ?, department = ?, title = ?, avatar = ?, phone = ?, office_hours = ?, reg_no = ? WHERE id = ?`,
+      [
+        updatedName,
+        updatedEmail,
+        updatedDepartment,
+        updatedTitle,
+        updatedAvatar,
+        updatedPhone,
+        updatedOfficeHours,
+        updatedRegNo,
+        id,
+      ]
+    );
+
+    const [updatedRows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'User profile updated successfully',
+      data: formatUserRow(updatedRows[0]),
+    });
+  } catch (err) {
+    console.error('Error updating user:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to update user',
+    });
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
   createUser,
+  updateUser,
 };

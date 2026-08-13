@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { User, Task, Priority, AdminTab, FacultyTab, NotificationItem } from '../types';
-import { fetchUsers, fetchTasks, createTask, completeTask, createUser } from '../services/api';
+import { fetchUsers, fetchTasks, createTask, completeTask, createUser, updateUser, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { TabBar } from '../components/navigation/TabBar';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
 import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
@@ -164,52 +164,36 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
 }) => {
   const { colors } = useTheme();
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: 'notif-1',
-      title: 'Urgent Room Change Notice',
-      message: 'The 2:00 PM Data Structures lecture has been moved to Auditorium 302 due to maintenance.',
-      type: 'urgent',
-      timestamp: '10 mins ago',
-      isRead: false,
-      senderName: 'Academic Office',
-    },
-    {
-      id: 'notif-2',
-      title: 'New Task Assigned by Dean',
-      message: 'You have been assigned to evaluate mid-term examination answer scripts.',
-      type: 'task_assigned',
-      timestamp: '1 hour ago',
-      isRead: false,
-      senderName: 'Dean James Wilson',
-    },
-    {
-      id: 'notif-3',
-      title: 'Upcoming Lecture Reminder',
-      message: 'Advanced Software Engineering lecture starts in 30 minutes at Room 104.',
-      type: 'reminder',
-      timestamp: '2 hours ago',
-      isRead: true,
-    },
-    {
-      id: 'notif-4',
-      title: 'Departmental Faculty Meeting',
-      message: 'Quarterly faculty progress review meeting scheduled for tomorrow at 4:00 PM in Conference Hall B.',
-      type: 'broadcast',
-      timestamp: '1 day ago',
-      isRead: true,
-      senderName: 'Head of Department',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const handleMarkAsRead = (id: string) => {
+  useEffect(() => {
+    let isMounted = true;
+    const loadNotifications = async () => {
+      try {
+        const notifs = await fetchNotifications(currentFaculty?.id);
+        if (isMounted) {
+          setNotifications(notifs);
+        }
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+      }
+    };
+    loadNotifications();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentFaculty?.id]);
+
+  const handleMarkAsRead = async (id: string) => {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     );
+    await markNotificationRead(id);
   };
 
-  const handleMarkAllAsRead = () => {
+  const handleMarkAllAsRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    await markAllNotificationsRead(currentFaculty?.id);
   };
 
   const handleClearRead = () => {
@@ -379,17 +363,22 @@ export const AppNavigator: React.FC = () => {
     }
   };
 
-  const handleUpdateFaculty = (updatedData: {
+  const handleUpdateFaculty = async (updatedData: {
     id: string;
     name: string;
     email: string;
     department: string;
     regNo: string;
   }) => {
-    setAllFaculty(prev =>
-      prev.map(f => (f.id === updatedData.id ? { ...f, ...updatedData } : f))
-    );
-    Alert.alert('Faculty Updated', `Successfully updated profile details for ${updatedData.name}.`);
+    try {
+      const updated = await updateUser(updatedData.id, updatedData);
+      setAllFaculty(prev =>
+        prev.map(f => (f.id === updatedData.id ? { ...f, ...updated } : f))
+      );
+      Alert.alert('Faculty Updated', `Successfully updated profile details for ${updatedData.name}.`);
+    } catch {
+      Alert.alert('Error', 'Failed to update faculty profile details.');
+    }
   };
 
   // Faculty Handlers
