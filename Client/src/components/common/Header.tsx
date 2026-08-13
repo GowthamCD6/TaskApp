@@ -9,6 +9,8 @@ import {
   Image,
 } from 'react-native';
 import { User } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
+import { Icon } from './Icon';
 
 interface HeaderProps {
   currentUser: User | null;
@@ -23,41 +25,82 @@ export const Header: React.FC<HeaderProps> = ({
   onFacultySwitch,
   onLogout,
 }) => {
+  const { isDark, colors, toggleTheme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.headerBg,
+          borderBottomColor: colors.headerBorder,
+        },
+      ]}
+    >
       <View style={styles.topRow}>
         <View>
-          <Text style={styles.brandTitle}>TaskAssign</Text>
-          <Text style={styles.brandSubtitle}>Academic Schedule & Task Portal</Text>
+          <Text style={[styles.brandTitle, { color: colors.text }]}>TaskAssign</Text>
+          <Text style={[styles.brandSubtitle, { color: colors.subText }]}>
+            Academic Schedule & Task Portal
+          </Text>
         </View>
 
         <View style={styles.rightGroup}>
+          {/* Theme Switcher Icon Button */}
           <TouchableOpacity
-            style={styles.roleBadge}
+            style={[
+              styles.iconBtn,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.inputBorder,
+              },
+            ]}
+            onPress={toggleTheme}
+            activeOpacity={0.8}
+          >
+            <Icon name={isDark ? 'sun' : 'moon'} size={16} color={colors.primary} />
+          </TouchableOpacity>
+
+          {/* Persona Switcher Badge */}
+          <TouchableOpacity
+            style={[
+              styles.roleBadge,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.inputBorder,
+              },
+            ]}
             onPress={() => setModalVisible(true)}
             activeOpacity={0.8}
           >
             <View
               style={[
                 styles.roleDot,
-                isAdmin ? styles.roleDotAdmin : styles.roleDotFaculty,
+                {
+                  backgroundColor: isAdmin ? colors.primary : colors.secondary,
+                },
               ]}
             />
-            <Text style={styles.roleText}>
+            <Text style={[styles.roleText, { color: colors.text }]}>
               {isAdmin ? 'Admin Portal' : currentUser?.name || 'Faculty View'}
             </Text>
-            <Text style={styles.dropdownArrow}>▼</Text>
+            <Icon name="chevron-down" size={10} color={colors.subText} />
           </TouchableOpacity>
 
+          {/* Logout Button */}
           <TouchableOpacity
-            style={styles.logoutBtn}
+            style={[
+              styles.logoutBtn,
+              {
+                backgroundColor: isDark ? '#334155' : '#E2E8F0',
+              },
+            ]}
             onPress={onLogout}
             activeOpacity={0.8}
           >
-            <Text style={styles.logoutBtnText}>Logout</Text>
+            <Text style={[styles.logoutBtnText, { color: colors.text }]}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -74,24 +117,50 @@ export const Header: React.FC<HeaderProps> = ({
           activeOpacity={1}
           onPress={() => setModalVisible(false)}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalHeaderTitle}>Active Persona & Faculty Switcher</Text>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.cardBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.modalHeaderTitle, { color: colors.text }]}>
+              Active Persona & Faculty Switcher
+            </Text>
 
-            <View style={styles.activeUserInfo}>
+            <View
+              style={[
+                styles.activeUserInfo,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.inputBorder,
+                },
+              ]}
+            >
               {currentUser?.avatar ? (
                 <Image source={{ uri: currentUser.avatar }} style={styles.userAvatar} />
               ) : null}
               <View>
-                <Text style={styles.userName}>{currentUser?.name}</Text>
-                <Text style={styles.userRole}>
-                  Role: <Text style={isAdmin ? styles.adminRoleText : styles.facultyRoleText}>
+                <Text style={[styles.userName, { color: colors.text }]}>{currentUser?.name}</Text>
+                <Text style={[styles.userRole, { color: colors.subText }]}>
+                  Role:{' '}
+                  <Text
+                    style={{
+                      color: isAdmin ? colors.primary : colors.secondary,
+                      fontWeight: '700',
+                    }}
+                  >
                     {isAdmin ? 'Administrator' : 'Faculty Member'}
                   </Text>
                 </Text>
               </View>
             </View>
 
-            <Text style={styles.sectionSubtitle}>Switch Faculty Account:</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.subText }]}>
+              Switch Faculty Account:
+            </Text>
             <FlatList
               data={allFaculty}
               keyExtractor={item => item.id}
@@ -101,7 +170,15 @@ export const Header: React.FC<HeaderProps> = ({
                   <TouchableOpacity
                     style={[
                       styles.facultyItem,
-                      isSelected && styles.facultyItemSelected,
+                      {
+                        backgroundColor: isSelected
+                          ? isDark
+                            ? '#112922'
+                            : '#E6F4EA'
+                          : colors.surface,
+                        borderColor: isSelected ? colors.secondary : 'transparent',
+                        borderWidth: isSelected ? 1.5 : 0,
+                      },
                     ]}
                     onPress={() => {
                       onFacultySwitch(item);
@@ -110,10 +187,14 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <Image source={{ uri: item.avatar }} style={styles.facultyAvatar} />
                     <View style={styles.facultyInfo}>
-                      <Text style={styles.facultyName}>{item.name}</Text>
-                      <Text style={styles.facultyDept}>{item.department} • {item.title}</Text>
+                      <Text style={[styles.facultyName, { color: colors.text }]}>{item.name}</Text>
+                      <Text style={[styles.facultyDept, { color: colors.subText }]}>
+                        {item.department} • {item.title}
+                      </Text>
                     </View>
-                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                    {isSelected && (
+                      <Icon name="check" size={14} color={colors.secondary} />
+                    )}
                   </TouchableOpacity>
                 );
               }}
@@ -121,10 +202,13 @@ export const Header: React.FC<HeaderProps> = ({
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={styles.closeBtn}
+                style={[
+                  styles.closeBtn,
+                  { backgroundColor: isDark ? '#334155' : '#CBD5E1' },
+                ]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.closeBtnText}>Close</Text>
+                <Text style={[styles.closeBtnText, { color: colors.text }]}>Close</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.logoutModalBtn}
@@ -145,12 +229,10 @@ export const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#0F172A',
     paddingHorizontal: 20,
     paddingTop: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   topRow: {
     flexDirection: 'row',
@@ -160,28 +242,31 @@ const styles = StyleSheet.create({
   brandTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#F8FAFC',
     letterSpacing: 0.5,
   },
   brandSubtitle: {
     fontSize: 11,
-    color: '#94A3B8',
     marginTop: 2,
   },
   rightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  iconBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginRight: 6,
+  },
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#334155',
-    marginRight: 8,
+    marginRight: 6,
   },
   roleDot: {
     width: 8,
@@ -189,71 +274,45 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginRight: 6,
   },
-  roleDotAdmin: {
-    backgroundColor: '#6366F1',
-  },
-  roleDotFaculty: {
-    backgroundColor: '#10B981',
-  },
-  adminRoleText: {
-    color: '#6366F1',
-    fontWeight: '700',
-  },
-  facultyRoleText: {
-    color: '#10B981',
-    fontWeight: '700',
-  },
   roleText: {
-    color: '#F8FAFC',
     fontSize: 12,
     fontWeight: '600',
-    marginRight: 4,
-  },
-  dropdownArrow: {
-    color: '#94A3B8',
-    fontSize: 9,
+    marginRight: 6,
   },
   logoutBtn: {
-    backgroundColor: '#334155',
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 8,
   },
   logoutBtnText: {
-    color: '#CBD5E1',
     fontSize: 11,
     fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
   modalContent: {
-    backgroundColor: '#1E293B',
     borderRadius: 20,
     padding: 20,
     maxHeight: '80%',
     borderWidth: 1,
-    borderColor: '#334155',
   },
   modalHeaderTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#F8FAFC',
     marginBottom: 14,
     textAlign: 'center',
   },
   activeUserInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F172A',
     padding: 12,
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   userAvatar: {
     width: 42,
@@ -262,17 +321,14 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   userName: {
-    color: '#F8FAFC',
     fontSize: 15,
     fontWeight: '700',
   },
   userRole: {
-    color: '#94A3B8',
     fontSize: 12,
     marginTop: 2,
   },
   sectionSubtitle: {
-    color: '#94A3B8',
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -283,37 +339,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#0F172A',
     borderRadius: 10,
     marginBottom: 8,
-  },
-  facultyItemSelected: {
-    borderWidth: 1.5,
-    borderColor: '#10B981',
   },
   facultyAvatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
     marginRight: 12,
-    backgroundColor: '#334155',
   },
   facultyInfo: {
     flex: 1,
   },
   facultyName: {
-    color: '#F8FAFC',
     fontSize: 14,
     fontWeight: '600',
   },
   facultyDept: {
-    color: '#94A3B8',
     fontSize: 12,
-  },
-  checkmark: {
-    color: '#10B981',
-    fontWeight: 'bold',
-    fontSize: 16,
   },
   modalActions: {
     flexDirection: 'row',
@@ -321,14 +364,12 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     flex: 1,
-    backgroundColor: '#334155',
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     marginRight: 8,
   },
   closeBtnText: {
-    color: '#F8FAFC',
     fontSize: 14,
     fontWeight: '600',
   },

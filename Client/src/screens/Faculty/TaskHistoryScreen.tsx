@@ -7,6 +7,8 @@ import {
   FlatList,
 } from 'react-native';
 import { Task, User } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
+import { Icon } from '../../components/common/Icon';
 
 interface TaskHistoryScreenProps {
   currentFaculty: User | null;
@@ -17,6 +19,7 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
   currentFaculty,
   allTasks,
 }) => {
+  const { colors } = useTheme();
   const [filterStatus, setFilterStatus] = useState<'all' | 'completed' | 'pending'>('all');
 
   const facultyTasks = allTasks.filter(t =>
@@ -33,10 +36,10 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
   const pendingCount = facultyTasks.filter(t => t.status === 'pending').length;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerBox}>
-        <Text style={styles.headerTitle}>Task Completion History</Text>
-        <Text style={styles.headerSubtitle}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.headerBox, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Task Completion History</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.subText }]}>
           Review all assigned tasks, completed outcomes, and submitted remarks.
         </Text>
 
@@ -53,7 +56,10 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
                 key={status}
                 style={[
                   styles.pill,
-                  isSelected && styles.pillSelected,
+                  {
+                    backgroundColor: isSelected ? colors.secondary : colors.surface,
+                    borderColor: isSelected ? colors.secondary : colors.inputBorder,
+                  },
                 ]}
                 onPress={() => setFilterStatus(status)}
                 activeOpacity={0.8}
@@ -61,7 +67,7 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
                 <Text
                   style={[
                     styles.pillText,
-                    isSelected && styles.pillTextSelected,
+                    { color: isSelected ? '#FFFFFF' : colors.subText },
                   ]}
                 >
                   {status.charAt(0).toUpperCase() + status.slice(1)} ({count})
@@ -78,9 +84,9 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyTitle}>No Task Records Found</Text>
-            <Text style={styles.emptySubtitle}>
+            <Icon name="clipboard" size={36} color={colors.secondary} />
+            <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 10 }]}>No Task Records Found</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.subText }]}>
               No tasks match the filter selection for {currentFaculty?.name || 'this faculty member'}.
             </Text>
           </View>
@@ -88,9 +94,9 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
         renderItem={({ item }) => {
           const isDone = item.status === 'completed';
           return (
-            <View style={styles.taskCard}>
+            <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
               <View style={styles.cardHeader}>
-                <Text style={styles.taskTitle}>{item.title}</Text>
+                <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
                 <View
                   style={[
                     styles.badge,
@@ -109,19 +115,19 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
               </View>
 
               {item.description ? (
-                <Text style={styles.taskDesc}>{item.description}</Text>
+                <Text style={[styles.taskDesc, { color: colors.subText }]}>{item.description}</Text>
               ) : null}
 
-              <Text style={styles.dateMeta}>
+              <Text style={[styles.dateMeta, { color: colors.mutedText }]}>
                 Date: {item.date} • {item.startTime} - {item.endTime} • Priority: {item.priority}
               </Text>
 
               {isDone && item.completionNote ? (
                 <View style={styles.remarkBox}>
                   <Text style={styles.remarkHeader}>Your Submitted Outcome & Remarks:</Text>
-                  <Text style={styles.remarkText}>"{item.completionNote}"</Text>
+                  <Text style={[styles.remarkText, { color: colors.text }]}>"{item.completionNote}"</Text>
                   {item.completedAt && (
-                    <Text style={styles.completedAtText}>
+                    <Text style={[styles.completedAtText, { color: colors.mutedText }]}>
                       Submitted on: {new Date(item.completedAt).toLocaleString()}
                     </Text>
                   )}
@@ -138,22 +144,17 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
   },
   headerBox: {
-    backgroundColor: '#0F172A',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#F8FAFC',
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#94A3B8',
     marginTop: 4,
   },
   pillContainer: {
@@ -161,36 +162,24 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   pill: {
-    backgroundColor: '#1E293B',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#334155',
-  },
-  pillSelected: {
-    backgroundColor: '#10B981',
-    borderColor: '#10B981',
   },
   pillText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#94A3B8',
-  },
-  pillTextSelected: {
-    color: '#FFFFFF',
   },
   listContent: {
     padding: 16,
   },
   taskCard: {
-    backgroundColor: '#0F172A',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -200,7 +189,6 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#F8FAFC',
     flex: 1,
     marginRight: 8,
   },
@@ -214,8 +202,8 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 11, fontWeight: '700' },
   doneText: { color: '#10B981' },
   pendingText: { color: '#F59E0B' },
-  taskDesc: { color: '#94A3B8', fontSize: 13, marginTop: 6 },
-  dateMeta: { color: '#64748B', fontSize: 11, marginTop: 8 },
+  taskDesc: { fontSize: 13, marginTop: 6 },
+  dateMeta: { fontSize: 11, marginTop: 8 },
   remarkBox: {
     backgroundColor: 'rgba(16,185,129,0.08)',
     borderLeftWidth: 3,
@@ -225,10 +213,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   remarkHeader: { color: '#10B981', fontSize: 11, fontWeight: '700' },
-  remarkText: { color: '#CBD5E1', fontSize: 12, fontStyle: 'italic', marginTop: 2 },
-  completedAtText: { color: '#64748B', fontSize: 10, marginTop: 4 },
+  remarkText: { fontSize: 12, fontStyle: 'italic', marginTop: 2 },
+  completedAtText: { fontSize: 10, marginTop: 4 },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyIcon: { fontSize: 40, marginBottom: 10 },
-  emptyTitle: { color: '#F8FAFC', fontSize: 16, fontWeight: '700' },
-  emptySubtitle: { color: '#64748B', fontSize: 13, textAlign: 'center', marginTop: 4 },
+  emptyTitle: { fontSize: 16, fontWeight: '700' },
+  emptySubtitle: { fontSize: 13, textAlign: 'center', marginTop: 4 },
 });

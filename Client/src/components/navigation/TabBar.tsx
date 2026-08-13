@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { AdminTab, FacultyTab, UserRole } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
+import { Icon, IconName } from '../common/Icon';
 
 interface TabBarProps {
   role: UserRole;
@@ -17,18 +19,30 @@ export const TabBar: React.FC<TabBarProps> = ({
   onSelectAdminTab,
   onSelectFacultyTab,
 }) => {
+  const { colors } = useTheme();
+
   if (role === 'admin') {
-    const adminTabs: { id: AdminTab; label: string; icon: string }[] = [
-      { id: 'schedule', label: 'Timeline', icon: '📅' },
-      { id: 'assign', label: 'Assign Task', icon: '➕' },
-      { id: 'directory', label: 'Faculty List', icon: '👥' },
-      { id: 'analytics', label: 'Analytics', icon: '📊' },
+    const adminTabs: { id: AdminTab; label: string; icon: IconName }[] = [
+      { id: 'schedule', label: 'Timeline', icon: 'calendar' },
+      { id: 'assign', label: 'Assign Task', icon: 'plus' },
+      { id: 'directory', label: 'Faculty List', icon: 'users' },
+      { id: 'analytics', label: 'Analytics', icon: 'analytics' },
     ];
 
     return (
-      <View style={styles.container}>
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: colors.tabBarBg,
+            borderTopColor: colors.tabBarBorder,
+          },
+        ]}
+      >
         {adminTabs.map(tab => {
           const isActive = activeAdminTab === tab.id;
+          const activeColor = colors.primary;
+          const inactiveColor = colors.mutedText;
           return (
             <TouchableOpacity
               key={tab.id}
@@ -36,16 +50,27 @@ export const TabBar: React.FC<TabBarProps> = ({
               onPress={() => onSelectAdminTab(tab.id)}
               activeOpacity={0.8}
             >
-              <Text style={styles.tabIcon}>{tab.icon}</Text>
+              <View style={styles.iconWrapper}>
+                <Icon
+                  name={tab.icon}
+                  size={18}
+                  color={isActive ? activeColor : inactiveColor}
+                />
+              </View>
               <Text
                 style={[
                   styles.tabLabel,
-                  isActive ? styles.tabLabelActiveAdmin : styles.tabLabelInactive,
+                  {
+                    color: isActive ? activeColor : inactiveColor,
+                    fontWeight: isActive ? '700' : '600',
+                  },
                 ]}
               >
                 {tab.label}
               </Text>
-              {isActive && <View style={styles.activeDotAdmin} />}
+              {isActive && (
+                <View style={[styles.activeDot, { backgroundColor: activeColor }]} />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -53,16 +78,26 @@ export const TabBar: React.FC<TabBarProps> = ({
     );
   }
 
-  const facultyTabs: { id: FacultyTab; label: string; icon: string }[] = [
-    { id: 'schedule', label: 'My Schedule', icon: '📅' },
-    { id: 'history', label: 'Task History', icon: '📋' },
-    { id: 'profile', label: 'My Profile', icon: '👤' },
+  const facultyTabs: { id: FacultyTab; label: string; icon: IconName }[] = [
+    { id: 'schedule', label: 'My Schedule', icon: 'calendar' },
+    { id: 'history', label: 'Task History', icon: 'clipboard' },
+    { id: 'profile', label: 'My Profile', icon: 'user' },
   ];
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.tabBarBorder,
+        },
+      ]}
+    >
       {facultyTabs.map(tab => {
         const isActive = activeFacultyTab === tab.id;
+        const activeColor = colors.secondary;
+        const inactiveColor = colors.mutedText;
         return (
           <TouchableOpacity
             key={tab.id}
@@ -70,16 +105,27 @@ export const TabBar: React.FC<TabBarProps> = ({
             onPress={() => onSelectFacultyTab(tab.id)}
             activeOpacity={0.8}
           >
-            <Text style={styles.tabIcon}>{tab.icon}</Text>
+            <View style={styles.iconWrapper}>
+              <Icon
+                name={tab.icon}
+                size={18}
+                color={isActive ? activeColor : inactiveColor}
+              />
+            </View>
             <Text
               style={[
                 styles.tabLabel,
-                isActive ? styles.tabLabelActiveFaculty : styles.tabLabelInactive,
+                {
+                  color: isActive ? activeColor : inactiveColor,
+                  fontWeight: isActive ? '700' : '600',
+                },
               ]}
             >
               {tab.label}
             </Text>
-            {isActive && <View style={styles.activeDotFaculty} />}
+            {isActive && (
+              <View style={[styles.activeDot, { backgroundColor: activeColor }]} />
+            )}
           </TouchableOpacity>
         );
       })}
@@ -90,9 +136,7 @@ export const TabBar: React.FC<TabBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#0F172A',
     borderTopWidth: 1,
-    borderTopColor: '#1E293B',
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
@@ -102,37 +146,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 4,
   },
-  tabIcon: {
-    fontSize: 18,
+  iconWrapper: {
     marginBottom: 3,
   },
   tabLabel: {
     fontSize: 11,
-    fontWeight: '600',
   },
-  tabLabelInactive: {
-    color: '#64748B',
-  },
-  tabLabelActiveAdmin: {
-    color: '#818CF8',
-    fontWeight: '700',
-  },
-  tabLabelActiveFaculty: {
-    color: '#34D399',
-    fontWeight: '700',
-  },
-  activeDotAdmin: {
+  activeDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#6366F1',
-    marginTop: 3,
-  },
-  activeDotFaculty: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#10B981',
     marginTop: 3,
   },
 });

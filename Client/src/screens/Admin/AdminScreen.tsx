@@ -10,6 +10,8 @@ import {
 import { Task, User, Priority } from '../../types';
 import { CalendarStrip } from '../../components/common/CalendarStrip';
 import { AssignTaskModal } from '../../components/modals/AssignTaskModal';
+import { useTheme } from '../../context/ThemeContext';
+import { Icon } from '../../components/common/Icon';
 
 interface AdminScreenProps {
   tasks: Task[];
@@ -36,6 +38,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   onAssignTask,
   onNavigateToAssignScreen,
 }) => {
+  const { colors } = useTheme();
   const [filterFacultyId, setFilterFacultyId] = useState<string>('all');
   const [assignModalVisible, setAssignModalVisible] = useState(false);
 
@@ -59,16 +62,16 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Calendar Strip */}
       <CalendarStrip selectedDate={selectedDate} onSelectDate={onSelectDate} />
 
       {/* Admin Action & Faculty Filter Header */}
-      <View style={styles.filterSection}>
+      <View style={[styles.filterSection, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
         <View style={styles.facultyFilterRow}>
-          <Text style={styles.filterLabel}>Faculty Schedule:</Text>
+          <Text style={[styles.filterLabel, { color: colors.subText }]}>Faculty Schedule:</Text>
           <TouchableOpacity
-            style={styles.filterChip}
+            style={[styles.filterChip, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}
             onPress={() => {
               const facultyIds = ['all', ...allFaculty.map(f => f.id)];
               const currentIndex = facultyIds.indexOf(filterFacultyId);
@@ -76,38 +79,43 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
               setFilterFacultyId(facultyIds[nextIndex]);
             }}
           >
-            <Text style={styles.filterChipText}>
+            <Text style={[styles.filterChipText, { color: colors.primary }]}>
               {filterFacultyId === 'all'
                 ? 'All Faculty Members'
                 : allFaculty.find(f => f.id === filterFacultyId)?.name}
             </Text>
-            <Text style={styles.filterChipArrow}> 🔄</Text>
+            <View style={{ marginLeft: 6 }}>
+              <Icon name="refresh" size={12} color={colors.primary} />
+            </View>
           </TouchableOpacity>
         </View>
 
         {/* Assign Task Button */}
         <TouchableOpacity
-          style={styles.assignBtn}
+          style={[styles.assignBtn, { backgroundColor: colors.primary }]}
           onPress={handleAssignBtnClick}
           activeOpacity={0.8}
         >
-          <Text style={styles.assignBtnText}>+ Assign Task to Faculty</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="plus" size={16} color="#FFFFFF" />
+            <Text style={styles.assignBtnText}> Assign Task to Faculty</Text>
+          </View>
         </TouchableOpacity>
       </View>
 
       {/* Overview Stats */}
       <View style={styles.statsContainer}>
-        <View style={[styles.statCard, styles.statTotalBorder]}>
-          <Text style={styles.statNumber}>{totalTasks}</Text>
-          <Text style={styles.statLabel}>Total Scheduled</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.statTotalBorder]}>
+          <Text style={[styles.statNumber, { color: colors.text }]}>{totalTasks}</Text>
+          <Text style={[styles.statLabel, { color: colors.subText }]}>Total Scheduled</Text>
         </View>
-        <View style={[styles.statCard, styles.statPendingBorder]}>
+        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.statPendingBorder]}>
           <Text style={[styles.statNumber, styles.textPending]}>{pendingTasks}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
+          <Text style={[styles.statLabel, { color: colors.subText }]}>Pending</Text>
         </View>
-        <View style={[styles.statCard, styles.statCompletedBorder]}>
+        <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }, styles.statCompletedBorder]}>
           <Text style={[styles.statNumber, styles.textCompleted]}>{completedTasks}</Text>
-          <Text style={styles.statLabel}>Completed</Text>
+          <Text style={[styles.statLabel, { color: colors.subText }]}>Completed</Text>
         </View>
       </View>
 
@@ -118,9 +126,9 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📅</Text>
-            <Text style={styles.emptyTitle}>No Tasks Scheduled</Text>
-            <Text style={styles.emptySubtitle}>
+            <Icon name="calendar" size={36} color={colors.primary} />
+            <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 10 }]}>No Tasks Scheduled</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.subText }]}>
               No tasks assigned on {selectedDate} for this selection. Tap above to assign a new task.
             </Text>
           </View>
@@ -140,10 +148,10 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           }
 
           return (
-            <View style={styles.taskCard}>
-              <View style={styles.timeColumn}>
-                <Text style={styles.timeText}>{item.startTime}</Text>
-                <Text style={styles.timeSubtext}>to {item.endTime}</Text>
+            <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={[styles.timeColumn, { borderRightColor: colors.cardBorder }]}>
+                <Text style={[styles.timeText, { color: colors.text }]}>{item.startTime}</Text>
+                <Text style={[styles.timeSubtext, { color: colors.mutedText }]}>to {item.endTime}</Text>
                 <View
                   style={[
                     styles.statusBadge,
@@ -163,7 +171,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
               <View style={styles.cardContent}>
                 <View style={styles.cardHeaderRow}>
-                  <Text style={styles.taskTitle}>{item.title}</Text>
+                  <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
                   <View style={[styles.priorityTag, priorityStyle]}>
                     <Text style={[styles.priorityTagText, priorityTextStyle]}>
                       {item.priority}
@@ -172,7 +180,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 </View>
 
                 {item.description ? (
-                  <Text style={styles.taskDesc}>{item.description}</Text>
+                  <Text style={[styles.taskDesc, { color: colors.subText }]}>{item.description}</Text>
                 ) : null}
 
                 <View style={styles.facultyRow}>
@@ -180,8 +188,8 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     <Image source={{ uri: faculty.avatar }} style={styles.avatar} />
                   ) : null}
                   <View>
-                    <Text style={styles.facultyName}>{item.assignedToName}</Text>
-                    <Text style={styles.facultyDept}>{faculty?.department}</Text>
+                    <Text style={[styles.facultyName, { color: colors.text }]}>{item.assignedToName}</Text>
+                    <Text style={[styles.facultyDept, { color: colors.subText }]}>{faculty?.department}</Text>
                   </View>
                 </View>
 
@@ -189,7 +197,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 {isCompleted && item.completionNote ? (
                   <View style={styles.remarkBox}>
                     <Text style={styles.remarkHeader}>Faculty Completion Note:</Text>
-                    <Text style={styles.remarkText}>"{item.completionNote}"</Text>
+                    <Text style={[styles.remarkText, { color: colors.text }]}>"{item.completionNote}"</Text>
                   </View>
                 ) : null}
               </View>
@@ -213,14 +221,11 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
   },
   filterSection: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   facultyFilterRow: {
     flexDirection: 'row',
@@ -228,34 +233,27 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   filterLabel: {
-    color: '#94A3B8',
     fontSize: 13,
     fontWeight: '600',
     marginRight: 8,
   },
   filterChip: {
-    backgroundColor: '#1E293B',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#334155',
     flexDirection: 'row',
     alignItems: 'center',
   },
   filterChipText: {
-    color: '#38BDF8',
     fontSize: 13,
     fontWeight: '600',
   },
-  filterChipArrow: {
-    fontSize: 12,
-  },
   assignBtn: {
-    backgroundColor: '#6366F1',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   assignBtnText: {
     color: '#FFFFFF',
@@ -269,13 +267,11 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#0F172A',
     padding: 12,
     borderRadius: 12,
     marginRight: 8,
     borderLeftWidth: 3,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   statTotalBorder: {
     borderLeftColor: '#6366F1',
@@ -287,12 +283,10 @@ const styles = StyleSheet.create({
     borderLeftColor: '#10B981',
   },
   statNumber: {
-    color: '#F8FAFC',
     fontSize: 18,
     fontWeight: '800',
   },
   statLabel: {
-    color: '#94A3B8',
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
@@ -309,27 +303,22 @@ const styles = StyleSheet.create({
   },
   taskCard: {
     flexDirection: 'row',
-    backgroundColor: '#0F172A',
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   timeColumn: {
     width: 75,
     borderRightWidth: 1,
-    borderRightColor: '#1E293B',
     paddingRight: 10,
     justifyContent: 'flex-start',
   },
   timeText: {
-    color: '#F8FAFC',
     fontSize: 14,
     fontWeight: '700',
   },
   timeSubtext: {
-    color: '#64748B',
     fontSize: 11,
     marginTop: 2,
   },
@@ -360,7 +349,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   taskTitle: {
-    color: '#F8FAFC',
     fontSize: 15,
     fontWeight: '700',
     flex: 1,
@@ -395,7 +383,6 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
   },
   taskDesc: {
-    color: '#94A3B8',
     fontSize: 13,
     marginTop: 6,
     lineHeight: 18,
@@ -410,15 +397,12 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     marginRight: 8,
-    backgroundColor: '#334155',
   },
   facultyName: {
-    color: '#E2E8F0',
     fontSize: 12,
     fontWeight: '600',
   },
   facultyDept: {
-    color: '#64748B',
     fontSize: 10,
   },
   remarkBox: {
@@ -435,7 +419,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   remarkText: {
-    color: '#CBD5E1',
     fontSize: 12,
     fontStyle: 'italic',
     marginTop: 2,
@@ -444,17 +427,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
   },
-  emptyIcon: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
   emptyTitle: {
-    color: '#F8FAFC',
     fontSize: 16,
     fontWeight: '700',
   },
   emptySubtitle: {
-    color: '#64748B',
     fontSize: 13,
     textAlign: 'center',
     marginTop: 4,

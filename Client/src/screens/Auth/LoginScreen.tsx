@@ -13,6 +13,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { User, UserRole } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
+import { Icon } from '../../components/common/Icon';
 
 interface LoginScreenProps {
   allFaculty: User[];
@@ -23,15 +25,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   allFaculty,
   onLoginSuccess,
 }) => {
+  const { isDark, colors, toggleTheme } = useTheme();
   const [selectedRole, setSelectedRole] = useState<UserRole>('admin');
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>(allFaculty[0]?.id || '');
-  const [email, setEmail] = useState<string>('admin.dean@university.edu');
+  const [regNo, setRegNo] = useState<string>('ADM-2026-001');
   const [password, setPassword] = useState<string>('123456');
 
   const adminUser: User = {
     id: 'admin-1',
     name: 'Dean James Wilson',
     email: 'admin.dean@university.edu',
+    regNo: 'ADM-2026-001',
     role: 'admin',
     department: 'Academic Administration',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
@@ -51,94 +55,211 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
+  const handleGoogleLogin = () => {
+    Alert.alert(
+      'Google Workspace SSO',
+      `Connecting to Google OAuth 2.0...\n\nLogging in as ${selectedRole === 'admin' ? adminUser.name : (allFaculty.find(f => f.id === selectedFacultyId)?.name || 'Faculty Member')}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue with Google',
+          onPress: () => {
+            if (selectedRole === 'admin') {
+              onLoginSuccess(adminUser);
+            } else {
+              const faculty = allFaculty.find(f => f.id === selectedFacultyId) || allFaculty[0];
+              onLoginSuccess(faculty || adminUser);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Brand Header */}
-        <View style={styles.brandContainer}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoIcon}>🎓</Text>
-          </View>
-          <Text style={styles.brandName}>TaskAssign Portal</Text>
-          <Text style={styles.brandTagline}>Academic Schedule & Faculty Task Management System</Text>
+        {/* Top Header Controls (Theme Switcher Pill) */}
+        <View style={styles.topControlRow}>
+          <TouchableOpacity
+            style={[
+              styles.themeToggleBtn,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.cardBorder,
+              },
+            ]}
+            onPress={toggleTheme}
+            activeOpacity={0.8}
+          >
+            <View style={{ marginRight: 6 }}>
+              <Icon name={isDark ? 'sun' : 'moon'} size={16} color={colors.primary} />
+            </View>
+            <Text style={[styles.themeToggleText, { color: colors.text }]}>
+              {isDark ? 'Light Mode' : 'Dark Mode'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Login Card */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeaderTitle}>Select Login Portal</Text>
+        {/* Brand Header */}
+        <View style={styles.brandContainer}>
+          <View style={[styles.logoBadge, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
+            <Icon name="academic" size={32} color={colors.primary} />
+          </View>
+          <Text style={[styles.brandName, { color: colors.text }]}>TaskAssign Portal</Text>
+          <Text style={[styles.brandTagline, { color: colors.subText }]}>
+            Academic Schedule & Faculty Task Management System
+          </Text>
+        </View>
 
-          {/* Role Toggle Buttons */}
-          <View style={styles.roleToggleRow}>
+        {/* Login Main Card */}
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.cardBorder,
+              shadowColor: colors.shadowColor,
+            },
+          ]}
+        >
+          {/* Google Sign-In Button */}
+          <TouchableOpacity
+            style={[
+              styles.googleBtn,
+              {
+                backgroundColor: colors.googleBtnBg,
+                borderColor: colors.googleBtnBorder,
+              },
+            ]}
+            onPress={handleGoogleLogin}
+            activeOpacity={0.85}
+          >
+            <View style={styles.googleBadge}>
+              <Text style={styles.googleBadgeText}>G</Text>
+            </View>
+            <Text style={[styles.googleBtnText, { color: colors.googleBtnText }]}>
+              Sign in with Google Workspace
+            </Text>
+          </TouchableOpacity>
+
+          {/* Social Divider */}
+          <View style={styles.dividerRow}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
+            <Text style={[styles.dividerText, { color: colors.mutedText }]}>OR SELECT PORTAL</Text>
+            <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
+          </View>
+
+          {/* Role Segment Toggle Buttons */}
+          <View style={[styles.roleToggleRow, { backgroundColor: colors.surface }]}>
             <TouchableOpacity
               style={[
                 styles.roleBtn,
-                selectedRole === 'admin' && styles.roleBtnActiveAdmin,
+                selectedRole === 'admin' && { backgroundColor: colors.roleAdminBg },
               ]}
               onPress={() => {
                 setSelectedRole('admin');
-                setEmail('admin.dean@university.edu');
+                setRegNo('ADM-2026-001');
               }}
               activeOpacity={0.8}
             >
-              <Text style={[styles.roleBtnText, selectedRole === 'admin' && styles.roleBtnTextActive]}>
-                🛡️ Admin Portal
-              </Text>
+              <View style={styles.btnIconContent}>
+                <Icon
+                  name="shield"
+                  size={16}
+                  color={selectedRole === 'admin' ? '#FFFFFF' : colors.subText}
+                />
+                <Text
+                  style={[
+                    styles.roleBtnText,
+                    { color: selectedRole === 'admin' ? '#FFFFFF' : colors.subText },
+                  ]}
+                >
+                  Admin Portal
+                </Text>
+              </View>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
                 styles.roleBtn,
-                selectedRole === 'faculty' && styles.roleBtnActiveFaculty,
+                selectedRole === 'faculty' && { backgroundColor: colors.roleFacultyBg },
               ]}
               onPress={() => {
                 setSelectedRole('faculty');
                 const firstFac = allFaculty[0];
                 if (firstFac) {
                   setSelectedFacultyId(firstFac.id);
-                  setEmail(firstFac.email);
+                  setRegNo(firstFac.regNo || 'FAC-2026-101');
                 }
               }}
               activeOpacity={0.8}
             >
-              <Text style={[styles.roleBtnText, selectedRole === 'faculty' && styles.roleBtnTextActive]}>
-                👨‍🏫 Faculty Portal
-              </Text>
+              <View style={styles.btnIconContent}>
+                <Icon
+                  name="user"
+                  size={16}
+                  color={selectedRole === 'faculty' ? '#FFFFFF' : colors.subText}
+                />
+                <Text
+                  style={[
+                    styles.roleBtnText,
+                    { color: selectedRole === 'faculty' ? '#FFFFFF' : colors.subText },
+                  ]}
+                >
+                  Faculty Portal
+                </Text>
+              </View>
             </TouchableOpacity>
           </View>
 
+          {/* Form Content */}
           {selectedRole === 'admin' ? (
             <View style={styles.formContainer}>
-              <Text style={styles.portalDescription}>
+              <Text style={[styles.portalDescription, { color: colors.subText }]}>
                 Logged in as Academic Administrator (Full control to schedule & assign tasks).
               </Text>
 
-              <Text style={styles.label}>Admin Email Address</Text>
+              <Text style={[styles.label, { color: colors.subText }]}>Faculty Reg. No. / Admin ID</Text>
               <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="admin@university.edu"
-                placeholderTextColor="#64748B"
-                keyboardType="email-address"
-                autoCapitalize="none"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
+                  },
+                ]}
+                value={regNo}
+                onChangeText={setRegNo}
+                placeholder="e.g. ADM-2026-001"
+                placeholderTextColor={colors.mutedText}
+                autoCapitalize="characters"
               />
 
-              <Text style={styles.label}>Password</Text>
+              <Text style={[styles.label, { color: colors.subText }]}>Password</Text>
               <TextInput
-                style={styles.input}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
+                  },
+                ]}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
-                placeholderTextColor="#64748B"
+                placeholderTextColor={colors.mutedText}
                 secureTextEntry
               />
             </View>
           ) : (
             <View style={styles.formContainer}>
-              <Text style={styles.portalDescription}>
+              <Text style={[styles.portalDescription, { color: colors.subText }]}>
                 Select your Faculty Member account to access your day-wise task calendar:
               </Text>
 
@@ -152,20 +273,33 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     <TouchableOpacity
                       style={[
                         styles.facultyCard,
-                        isSelected && styles.facultyCardSelected,
+                        {
+                          backgroundColor: isSelected
+                            ? isDark
+                              ? '#112922'
+                              : '#E6F4EA'
+                            : colors.inputBg,
+                          borderColor: isSelected ? colors.secondary : colors.inputBorder,
+                        },
                       ]}
                       onPress={() => {
                         setSelectedFacultyId(item.id);
-                        setEmail(item.email);
+                        setRegNo(item.regNo || 'FAC-2026-101');
                       }}
                       activeOpacity={0.8}
                     >
                       <Image source={{ uri: item.avatar }} style={styles.avatar} />
                       <View style={styles.facultyMeta}>
-                        <Text style={styles.facultyName}>{item.name}</Text>
-                        <Text style={styles.facultySub}>{item.department} • {item.title}</Text>
+                        <Text style={[styles.facultyName, { color: colors.text }]}>{item.name}</Text>
+                        <Text style={[styles.facultySub, { color: colors.subText }]}>
+                          Reg. No: <Text style={{ color: colors.primary, fontWeight: '700' }}>{item.regNo || 'FAC-2026-101'}</Text> • {item.department}
+                        </Text>
                       </View>
-                      {isSelected && <Text style={styles.selectedCheck}>✓</Text>}
+                      {isSelected && (
+                        <View style={[styles.checkBadge, { backgroundColor: colors.secondary }]}>
+                          <Icon name="check" size={12} color="#FFFFFF" />
+                        </View>
+                      )}
                     </TouchableOpacity>
                   );
                 }}
@@ -177,7 +311,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <TouchableOpacity
             style={[
               styles.submitBtn,
-              selectedRole === 'admin' ? styles.submitBtnAdmin : styles.submitBtnFaculty,
+              {
+                backgroundColor:
+                  selectedRole === 'admin' ? colors.roleAdminBg : colors.roleFacultyBg,
+              },
             ]}
             onPress={handleLogin}
             activeOpacity={0.85}
@@ -190,7 +327,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
         {/* Demo Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>TaskAssign v1.0.0 • Role-Based Academic Management</Text>
+          <Text style={[styles.footerText, { color: colors.mutedText }]}>
+            TaskAssign v1.0.0 • Role-Based Academic Management
+          </Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -200,66 +339,111 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingVertical: 30,
+    paddingVertical: 24,
     justifyContent: 'center',
     minHeight: '100%',
   },
+  topControlRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 12,
+  },
+  themeToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  themeToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   brandContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   logoBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#1E293B',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 2,
-    borderColor: '#6366F1',
-  },
-  logoIcon: {
-    fontSize: 32,
   },
   brandName: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#F8FAFC',
     letterSpacing: 0.5,
   },
   brandTagline: {
     fontSize: 13,
-    color: '#94A3B8',
     textAlign: 'center',
     marginTop: 4,
+    paddingHorizontal: 20,
   },
   card: {
-    backgroundColor: '#0F172A',
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  cardHeaderTitle: {
-    color: '#94A3B8',
-    fontSize: 12,
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  googleBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#4285F4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  googleBadgeText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 14,
+  },
+  googleBtnText: {
+    fontSize: 14,
     fontWeight: '700',
-    textTransform: 'uppercase',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    fontSize: 10,
+    fontWeight: '700',
     letterSpacing: 1,
-    textAlign: 'center',
-    marginBottom: 14,
+    marginHorizontal: 10,
   },
   roleToggleRow: {
     flexDirection: 'row',
-    backgroundColor: '#1E293B',
     borderRadius: 12,
     padding: 4,
     marginBottom: 16,
+    marginTop: 4,
   },
   roleBtn: {
     flex: 1,
@@ -267,84 +451,66 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  roleBtnActiveAdmin: {
-    backgroundColor: '#6366F1',
-  },
-  roleBtnActiveFaculty: {
-    backgroundColor: '#10B981',
+  btnIconContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   roleBtnText: {
-    color: '#94A3B8',
     fontSize: 13,
-    fontWeight: '600',
-  },
-  roleBtnTextActive: {
-    color: '#FFFFFF',
     fontWeight: '700',
+    marginLeft: 6,
   },
   formContainer: {
     marginBottom: 16,
   },
   portalDescription: {
-    color: '#CBD5E1',
     fontSize: 13,
     marginBottom: 14,
     lineHeight: 18,
   },
   label: {
-    color: '#94A3B8',
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 6,
     marginTop: 10,
   },
   input: {
-    backgroundColor: '#1E293B',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: '#F8FAFC',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#334155',
   },
   facultyCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E293B',
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  facultyCardSelected: {
-    borderColor: '#10B981',
-    backgroundColor: '#112922',
+    borderWidth: 1.5,
   },
   avatar: {
     width: 38,
     height: 38,
     borderRadius: 19,
     marginRight: 12,
-    backgroundColor: '#334155',
   },
   facultyMeta: {
     flex: 1,
   },
   facultyName: {
-    color: '#F8FAFC',
     fontSize: 14,
     fontWeight: '600',
   },
   facultySub: {
-    color: '#94A3B8',
     fontSize: 11,
   },
-  selectedCheck: {
-    color: '#10B981',
-    fontWeight: 'bold',
-    fontSize: 16,
+  checkBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitBtn: {
     paddingVertical: 14,
@@ -352,23 +518,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  submitBtnAdmin: {
-    backgroundColor: '#6366F1',
-  },
-  submitBtnFaculty: {
-    backgroundColor: '#10B981',
-  },
   submitBtnText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
   },
   footer: {
-    marginTop: 24,
+    marginTop: 20,
     alignItems: 'center',
   },
   footerText: {
-    color: '#64748B',
     fontSize: 12,
   },
 });

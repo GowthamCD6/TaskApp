@@ -8,6 +8,7 @@ export interface User {
   department: string;
   avatar: string;
   title: string;
+  regNo?: string;
   phone?: string;
   officeHours?: string;
 }

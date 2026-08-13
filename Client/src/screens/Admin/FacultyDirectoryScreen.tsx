@@ -79,7 +79,9 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                 <View style={styles.facultyInfo}>
                   <Text style={styles.name}>{item.name}</Text>
                   <Text style={styles.dept}>{item.department} • {item.title}</Text>
-                  <Text style={styles.email}>{item.email}</Text>
+                  <Text style={styles.email}>
+                    Reg. No: {item.regNo || 'FAC-2026-101'} • {item.email}
+                  </Text>
                 </View>
               </View>
 

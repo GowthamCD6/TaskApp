@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
 
 interface CalendarStripProps {
   selectedDate: string; // YYYY-MM-DD
@@ -16,6 +17,8 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
   selectedDate,
   onSelectDate,
 }) => {
+  const { colors } = useTheme();
+
   // Generate 9 days around today
   const days = Array.from({ length: 9 }).map((_, index) => {
     const d = new Date();
@@ -34,8 +37,16 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
   });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.headerTitle}>Day-Wise Calendar Timeline</Text>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.card,
+          borderBottomColor: colors.cardBorder,
+        },
+      ]}
+    >
+      <Text style={[styles.headerTitle, { color: colors.subText }]}>Day-Wise Calendar Timeline</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -48,8 +59,16 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
               key={day.dateStr}
               style={[
                 styles.dayCard,
-                isSelected && styles.dayCardSelected,
-                day.isToday && !isSelected && styles.dayCardToday,
+                {
+                  backgroundColor: isSelected
+                    ? colors.primary
+                    : colors.surface,
+                  borderColor: isSelected
+                    ? colors.primary
+                    : day.isToday
+                    ? colors.secondary
+                    : colors.inputBorder,
+                },
               ]}
               onPress={() => onSelectDate(day.dateStr)}
               activeOpacity={0.7}
@@ -57,8 +76,13 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
               <Text
                 style={[
                   styles.dayName,
-                  isSelected && styles.textSelected,
-                  day.isToday && !isSelected && styles.textToday,
+                  {
+                    color: isSelected
+                      ? '#FFFFFF'
+                      : day.isToday
+                      ? colors.secondary
+                      : colors.subText,
+                  },
                 ]}
               >
                 {day.dayName}
@@ -66,13 +90,25 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
               <Text
                 style={[
                   styles.dayNum,
-                  isSelected && styles.textSelected,
-                  day.isToday && !isSelected && styles.textToday,
+                  {
+                    color: isSelected
+                      ? '#FFFFFF'
+                      : day.isToday
+                      ? colors.secondary
+                      : colors.text,
+                  },
                 ]}
               >
                 {day.dayNum}
               </Text>
-              {day.isToday && <View style={styles.dotIndicator} />}
+              {day.isToday && (
+                <View
+                  style={[
+                    styles.dotIndicator,
+                    { backgroundColor: isSelected ? '#FFFFFF' : colors.secondary },
+                  ]}
+                />
+              )}
             </TouchableOpacity>
           );
         })}
@@ -84,12 +120,9 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 14,
-    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
   },
   headerTitle: {
-    color: '#94A3B8',
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -103,43 +136,25 @@ const styles = StyleSheet.create({
   dayCard: {
     width: 60,
     height: 70,
-    backgroundColor: '#1E293B',
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  dayCardSelected: {
-    backgroundColor: '#6366F1',
-    borderColor: '#818CF8',
-  },
-  dayCardToday: {
-    borderColor: '#38BDF8',
+    borderWidth: 1.5,
   },
   dayName: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#94A3B8',
     marginBottom: 2,
   },
   dayNum: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#F8FAFC',
-  },
-  textSelected: {
-    color: '#FFFFFF',
-  },
-  textToday: {
-    color: '#38BDF8',
   },
   dotIndicator: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#38BDF8',
     marginTop: 4,
   },
 });

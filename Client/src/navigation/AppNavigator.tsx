@@ -12,6 +12,7 @@ import { TaskAnalyticsScreen } from '../screens/Admin/TaskAnalyticsScreen';
 import { FacultyScreen } from '../screens/Faculty/FacultyScreen';
 import { TaskHistoryScreen } from '../screens/Faculty/TaskHistoryScreen';
 import { FacultyProfileScreen } from '../screens/Faculty/FacultyProfileScreen';
+import { useTheme } from '../context/ThemeContext';
 
 // ==========================================
 // 1. Admin Navigator Component
@@ -51,6 +52,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
   activeTab,
   onTabChange,
 }) => {
+  const { colors } = useTheme();
   const [preselectedFacultyId, setPreselectedFacultyId] = useState<string>('');
 
   const handleAssignTaskForFaculty = (facultyId: string) => {
@@ -108,7 +110,11 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
     }
   };
 
-  return <View style={styles.subContainer}>{renderActiveScreen()}</View>;
+  return (
+    <View style={[styles.subContainer, { backgroundColor: colors.background }]}>
+      {renderActiveScreen()}
+    </View>
+  );
 };
 
 // ==========================================
@@ -131,6 +137,8 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
   onCompleteTask,
   activeTab,
 }) => {
+  const { colors } = useTheme();
+
   const renderActiveScreen = () => {
     switch (activeTab) {
       case 'history':
@@ -161,13 +169,18 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
     }
   };
 
-  return <View style={styles.subContainer}>{renderActiveScreen()}</View>;
+  return (
+    <View style={[styles.subContainer, { backgroundColor: colors.background }]}>
+      {renderActiveScreen()}
+    </View>
+  );
 };
 
 // ==========================================
 // 3. Master App Navigator Component
 // ==========================================
 export const AppNavigator: React.FC = () => {
+  const { colors } = useTheme();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allFaculty, setAllFaculty] = useState<User[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -275,9 +288,11 @@ export const AppNavigator: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6366F1" />
-        <Text style={styles.loadingText}>Loading Academic Task Portal...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.subText }]}>
+          Loading Academic Task Portal...
+        </Text>
       </View>
     );
   }
@@ -292,7 +307,7 @@ export const AppNavigator: React.FC = () => {
   }
 
   return (
-    <View style={styles.mainContainer}>
+    <View style={[styles.mainContainer, { backgroundColor: colors.background }]}>
       {/* Navigation Header Bar */}
       <Header
         currentUser={currentUser}
@@ -341,11 +356,9 @@ export const AppNavigator: React.FC = () => {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#090D16',
   },
   subContainer: {
     flex: 1,
-    backgroundColor: '#090D16',
   },
   contentBody: {
     flex: 1,
@@ -354,10 +367,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#090D16',
   },
   loadingText: {
-    color: '#94A3B8',
     fontSize: 14,
     marginTop: 12,
     fontWeight: '600',
