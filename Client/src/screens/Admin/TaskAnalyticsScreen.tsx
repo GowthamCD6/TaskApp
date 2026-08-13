@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList } from 'react-native';
 import { Task, User } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
+import { Icon } from '../../components/common/Icon';
 
 interface TaskAnalyticsScreenProps {
   allTasks: Task[];
@@ -11,6 +13,7 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
   allTasks,
   allFaculty,
 }) => {
+  const { colors } = useTheme();
   const total = allTasks.length;
   const completed = allTasks.filter(t => t.status === 'completed').length;
   const pending = total - completed;
@@ -23,72 +26,137 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
   const completedTasksWithNotes = allTasks.filter(t => t.status === 'completed' && t.completionNote);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <View style={styles.headerBox}>
-        <Text style={styles.badge}>Analytics & Performance Reports</Text>
-        <Text style={styles.headerTitle}>Task Metrics Overview</Text>
-        <Text style={styles.headerSubtitle}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.scrollContent}
+    >
+      <View
+        style={[
+          styles.headerBox,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.cardBorder,
+          },
+        ]}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+          <Icon name="analytics" size={20} color={colors.primary} />
+          <Text style={[styles.badge, { color: colors.primary, marginLeft: 6 }]}>
+            Analytics & Performance Reports
+          </Text>
+        </View>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Task Metrics Overview</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.subText }]}>
           Real-time tracking of task fulfillment, priority ratios, and faculty remarks.
         </Text>
       </View>
 
       {/* Completion Rate Banner */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Overall Task Completion Rate</Text>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.cardBorder,
+          },
+        ]}
+      >
+        <Text style={[styles.cardTitle, { color: colors.subText }]}>Overall Task Completion Rate</Text>
         <View style={styles.rateRow}>
           <Text style={styles.ratePercent}>{completionRate}%</Text>
           <View style={styles.rateSubTextGroup}>
-            <Text style={styles.rateSubTitle}>{completed} of {total} Tasks Completed</Text>
-            <Text style={styles.rateSubDesc}>{pending} tasks currently pending action</Text>
+            <Text style={[styles.rateSubTitle, { color: colors.text }]}>
+              {completed} of {total} Tasks Completed
+            </Text>
+            <Text style={[styles.rateSubDesc, { color: colors.subText }]}>
+              {pending} tasks currently pending action
+            </Text>
           </View>
         </View>
 
         {/* Progress Meter Bar */}
-        <View style={styles.progressTrack}>
+        <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
           <View style={[styles.progressFill, { width: `${completionRate}%` }]} />
         </View>
       </View>
 
       {/* Priority Distribution Cards */}
-      <Text style={styles.sectionHeader}>Task Distribution by Priority</Text>
+      <Text style={[styles.sectionHeader, { color: colors.text }]}>Task Distribution by Priority</Text>
       <View style={styles.priorityGrid}>
-        <View style={[styles.priorityCard, styles.highBorder]}>
-          <Text style={[styles.priorityNum, styles.highText]}>{highPriority}</Text>
-          <Text style={styles.priorityLabel}>High Priority</Text>
+        <View
+          style={[
+            styles.priorityCard,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            styles.highBorder,
+          ]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="alert" size={14} color="#EF4444" />
+            <Text style={[styles.priorityNum, styles.highText, { marginLeft: 4 }]}>{highPriority}</Text>
+          </View>
+          <Text style={[styles.priorityLabel, { color: colors.subText }]}>High Priority</Text>
         </View>
-        <View style={[styles.priorityCard, styles.medBorder]}>
+
+        <View
+          style={[
+            styles.priorityCard,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            styles.medBorder,
+          ]}
+        >
           <Text style={[styles.priorityNum, styles.medText]}>{mediumPriority}</Text>
-          <Text style={styles.priorityLabel}>Medium Priority</Text>
+          <Text style={[styles.priorityLabel, { color: colors.subText }]}>Medium Priority</Text>
         </View>
-        <View style={[styles.priorityCard, styles.lowBorder]}>
+
+        <View
+          style={[
+            styles.priorityCard,
+            { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            styles.lowBorder,
+          ]}
+        >
           <Text style={[styles.priorityNum, styles.lowText]}>{lowPriority}</Text>
-          <Text style={styles.priorityLabel}>Low Priority</Text>
+          <Text style={[styles.priorityLabel, { color: colors.subText }]}>Low Priority</Text>
         </View>
       </View>
 
       {/* Recent Faculty Remarks History */}
-      <Text style={styles.sectionHeader}>Submitted Faculty Completion Remarks ({completedTasksWithNotes.length})</Text>
+      <Text style={[styles.sectionHeader, { color: colors.text }]}>
+        Submitted Faculty Completion Remarks ({completedTasksWithNotes.length})
+      </Text>
       <FlatList
         data={completedTasksWithNotes}
         keyExtractor={t => t.id}
         scrollEnabled={false}
         ListEmptyComponent={
-          <Text style={styles.noDataText}>No task completion remarks submitted yet.</Text>
+          <Text style={[styles.noDataText, { color: colors.mutedText }]}>
+            No task completion remarks submitted yet.
+          </Text>
         }
         renderItem={({ item }) => {
           const faculty = allFaculty.find(f => f.id === item.assignedTo);
           return (
-            <View style={styles.remarkLogCard}>
+            <View
+              style={[
+                styles.remarkLogCard,
+                { backgroundColor: colors.card, borderColor: colors.cardBorder },
+              ]}
+            >
               <View style={styles.remarkHeader}>
-                <Text style={styles.taskTitle}>{item.title}</Text>
+                <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
                 <Text style={styles.facultyBadge}>{item.assignedToName}</Text>
               </View>
-              <Text style={styles.deptText}>{faculty?.department}</Text>
+              <Text style={[styles.deptText, { color: colors.subText }]}>{faculty?.department}</Text>
               <View style={styles.quoteBox}>
-                <Text style={styles.quoteText}>"{item.completionNote}"</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                  <Icon name="clipboard" size={12} color="#10B981" />
+                  <Text style={[styles.quoteText, { color: colors.text, marginLeft: 4 }]}>
+                    "{item.completionNote}"
+                  </Text>
+                </View>
               </View>
               {item.completedAt && (
-                <Text style={styles.timestampText}>
+                <Text style={[styles.timestampText, { color: colors.mutedText }]}>
                   Submitted: {new Date(item.completedAt).toLocaleString()}
                 </Text>
               )}
@@ -103,48 +171,38 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#090D16',
   },
   scrollContent: {
     padding: 16,
     paddingBottom: 30,
   },
   headerBox: {
-    backgroundColor: '#0F172A',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   badge: {
-    color: '#818CF8',
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 4,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#F8FAFC',
   },
   headerSubtitle: {
     fontSize: 12,
-    color: '#94A3B8',
     marginTop: 4,
   },
   card: {
-    backgroundColor: '#0F172A',
     borderRadius: 16,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   cardTitle: {
-    color: '#94A3B8',
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -166,18 +224,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rateSubTitle: {
-    color: '#F8FAFC',
     fontSize: 14,
     fontWeight: '700',
   },
   rateSubDesc: {
-    color: '#94A3B8',
     fontSize: 12,
     marginTop: 2,
   },
   progressTrack: {
     height: 10,
-    backgroundColor: '#1E293B',
     borderRadius: 5,
     overflow: 'hidden',
   },
@@ -187,7 +242,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   sectionHeader: {
-    color: '#F8FAFC',
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 10,
@@ -199,13 +253,11 @@ const styles = StyleSheet.create({
   },
   priorityCard: {
     flex: 1,
-    backgroundColor: '#0F172A',
     borderRadius: 12,
     padding: 12,
     marginRight: 8,
     borderLeftWidth: 3,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   highBorder: { borderLeftColor: '#EF4444' },
   medBorder: { borderLeftColor: '#F59E0B' },
@@ -214,24 +266,22 @@ const styles = StyleSheet.create({
   highText: { color: '#EF4444' },
   medText: { color: '#F59E0B' },
   lowText: { color: '#3B82F6' },
-  priorityLabel: { fontSize: 11, color: '#94A3B8', marginTop: 2 },
-  noDataText: { color: '#64748B', fontSize: 13, fontStyle: 'italic' },
+  priorityLabel: { fontSize: 11, marginTop: 4 },
+  noDataText: { fontSize: 13, fontStyle: 'italic' },
   remarkLogCard: {
-    backgroundColor: '#0F172A',
     borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#1E293B',
   },
   remarkHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
-  taskTitle: { color: '#F8FAFC', fontSize: 14, fontWeight: '700', flex: 1, marginRight: 8 },
-  facultyBadge: { color: '#34D399', fontSize: 12, fontWeight: '600' },
-  deptText: { color: '#64748B', fontSize: 11, marginTop: 2 },
+  taskTitle: { fontSize: 14, fontWeight: '700', flex: 1, marginRight: 8 },
+  facultyBadge: { color: '#10B981', fontSize: 12, fontWeight: '600' },
+  deptText: { fontSize: 11, marginTop: 2 },
   quoteBox: {
     backgroundColor: 'rgba(16,185,129,0.08)',
     borderLeftWidth: 3,
@@ -240,6 +290,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginTop: 8,
   },
-  quoteText: { color: '#CBD5E1', fontSize: 12, fontStyle: 'italic' },
-  timestampText: { color: '#64748B', fontSize: 10, marginTop: 6 },
+  quoteText: { fontSize: 12, fontStyle: 'italic' },
+  timestampText: { fontSize: 10, marginTop: 6 },
 });

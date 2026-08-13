@@ -9,6 +9,7 @@ export interface User {
   avatar: string;
   title: string;
   regNo?: string;
+  password?: string;
   phone?: string;
   officeHours?: string;
 }
@@ -33,5 +34,5 @@ export interface Task {
   createdAt: string;
 }
 
-export type AdminTab = 'schedule' | 'assign' | 'directory' | 'analytics';
+export type AdminTab = 'schedule' | 'assign' | 'directory' | 'analytics' | 'profile';
 export type FacultyTab = 'schedule' | 'history' | 'profile';
