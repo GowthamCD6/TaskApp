@@ -79,237 +79,242 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.scrollContent}
     >
-      {/* Top Back Navigation Bar */}
-      <TouchableOpacity
-        style={[
-          styles.backBtn,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.inputBorder,
-          },
-        ]}
-        onPress={onNavigateToSchedule}
-        activeOpacity={0.8}
-      >
-        <Text style={[styles.backBtnText, { color: colors.primary }]}>← Back to Timeline Schedule</Text>
-      </TouchableOpacity>
+      {/* Clean & Simple Header Bar */}
+      <View style={[styles.cleanHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        <View style={styles.headerLeftGroup}>
+          <Icon name="plus" size={18} color={colors.primary} />
+          <Text style={[styles.cleanHeaderTitle, { color: colors.text }]}>Assign Task</Text>
+        </View>
 
-      <View
-        style={[
-          styles.headerBox,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.cardBorder,
-          },
-        ]}
-      >
-        <Text style={[styles.badge, { color: colors.primary }]}>Administrator Control</Text>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Assign New Task to Faculty</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.subText }]}>
-          Schedule academic duties, lab evaluations, lecture slide preparation, or accreditation tasks.
-        </Text>
-      </View>
-
-      {/* Faculty Selection Card */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <Text style={[styles.cardSectionTitle, { color: colors.text }]}>1. Select Target Faculty Member</Text>
         <TouchableOpacity
           style={[
-            styles.dropdownBtn,
+            styles.backBtn,
             {
-              backgroundColor: colors.inputBg,
-              borderColor: colors.primary,
+              backgroundColor: colors.surface,
+              borderColor: colors.inputBorder,
             },
           ]}
-          onPress={() => setShowFacultyDropdown(!showFacultyDropdown)}
+          onPress={onNavigateToSchedule}
           activeOpacity={0.8}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <Icon name="user" size={16} color={colors.primary} />
-            <Text style={[styles.dropdownBtnText, { color: colors.text, marginLeft: 8 }]}>
-              {selectedFacultyObj
-                ? `${selectedFacultyObj.name} (${selectedFacultyObj.department})`
-                : 'Select Faculty Member'}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="arrow-left" size={12} color={colors.primary} />
+            <Text style={[styles.backBtnText, { color: colors.primary, marginLeft: 4 }]}>Timeline</Text>
           </View>
-          <Icon name={showFacultyDropdown ? 'chevron-down' : 'chevron-down'} size={12} color={colors.primary} />
         </TouchableOpacity>
+      </View>
 
-        {showFacultyDropdown && (
-          <View style={[styles.dropdownMenu, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}>
-            {allFaculty.map(faculty => (
-              <TouchableOpacity
-                key={faculty.id}
-                style={[
-                  styles.dropdownOption,
-                  {
-                    borderBottomColor: colors.cardBorder,
-                    backgroundColor:
-                      faculty.id === selectedFacultyId
-                        ? isDark
-                          ? '#312E81'
-                          : '#EEF2FF'
-                        : colors.surface,
-                  },
-                ]}
-                onPress={() => {
-                  setSelectedFacultyId(faculty.id);
-                  setShowFacultyDropdown(false);
-                }}
-              >
-                <Text style={[styles.facultyOptionName, { color: colors.text }]}>{faculty.name}</Text>
-                <Text style={[styles.facultyOptionDept, { color: colors.subText }]}>
-                  {faculty.department} • {faculty.title}
+      {/* Main Form Container */}
+      <View style={styles.formPadding}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.cardBorder,
+            },
+          ]}
+        >
+          {/* Select Faculty Member */}
+          <Text style={[styles.label, { color: colors.subText }]}>Assign To Faculty Member *</Text>
+          <TouchableOpacity
+            style={[
+              styles.dropdownSelector,
+              {
+                backgroundColor: colors.inputBg,
+                borderColor: colors.inputBorder,
+              },
+            ]}
+            onPress={() => setShowFacultyDropdown(!showFacultyDropdown)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.selectedFacultyRow}>
+              <View>
+                <Text style={[styles.selectedFacultyName, { color: colors.text }]}>
+                  {selectedFacultyObj?.name || 'Select Faculty'}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
+                <Text style={[styles.selectedFacultyMeta, { color: colors.subText }]}>
+                  Reg. No: {selectedFacultyObj?.regNo || 'FAC-2026-101'} • {selectedFacultyObj?.department}
+                </Text>
+              </View>
+            </View>
+            <Icon name={showFacultyDropdown ? 'chevron-up' : 'chevron-down'} size={14} color={colors.subText} />
+          </TouchableOpacity>
 
-      {/* Task Details Card */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <Text style={[styles.cardSectionTitle, { color: colors.text }]}>2. Task Information & Deliverables</Text>
-
-        <Text style={[styles.label, { color: colors.subText }]}>Task Name / Title *</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.inputBg,
-              borderColor: colors.inputBorder,
-              color: colors.text,
-            },
-          ]}
-          placeholder="e.g. Conduct CS-301 Midterm Viva & Lab Evaluation"
-          placeholderTextColor={colors.mutedText}
-          value={title}
-          onChangeText={setTitle}
-        />
-
-        <Text style={[styles.label, { color: colors.subText }]}>Detailed Instructions & Requirements</Text>
-        <TextInput
-          style={[
-            styles.input,
-            styles.textArea,
-            {
-              backgroundColor: colors.inputBg,
-              borderColor: colors.inputBorder,
-              color: colors.text,
-            },
-          ]}
-          placeholder="Provide instructions, course codes, room numbers, student lists, or required upload links..."
-          placeholderTextColor={colors.mutedText}
-          multiline
-          numberOfLines={4}
-          value={description}
-          onChangeText={setDescription}
-        />
-      </View>
-
-      {/* Timeline & Schedule Card */}
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-        <Text style={[styles.cardSectionTitle, { color: colors.text }]}>3. Calendar Schedule & Timeline</Text>
-
-        <Text style={[styles.label, { color: colors.subText }]}>Target Date (YYYY-MM-DD)</Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.inputBg,
-              borderColor: colors.inputBorder,
-              color: colors.text,
-            },
-          ]}
-          placeholder="2026-08-13"
-          placeholderTextColor={colors.mutedText}
-          value={date}
-          onChangeText={setDate}
-        />
-
-        <View style={styles.row}>
-          <View style={styles.flex1}>
-            <Text style={[styles.label, { color: colors.subText }]}>Start Time</Text>
-            <TextInput
+          {/* Dropdown Options List */}
+          {showFacultyDropdown && (
+            <View
               style={[
-                styles.input,
+                styles.dropdownList,
                 {
-                  backgroundColor: colors.inputBg,
+                  backgroundColor: colors.surface,
                   borderColor: colors.inputBorder,
-                  color: colors.text,
                 },
               ]}
-              placeholder="09:00"
-              placeholderTextColor={colors.mutedText}
-              value={startTime}
-              onChangeText={setStartTime}
-            />
-          </View>
-          <View style={styles.spacer} />
-          <View style={styles.flex1}>
-            <Text style={[styles.label, { color: colors.subText }]}>End Time</Text>
-            <TextInput
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.inputBg,
-                  borderColor: colors.inputBorder,
-                  color: colors.text,
-                },
-              ]}
-              placeholder="11:30"
-              placeholderTextColor={colors.mutedText}
-              value={endTime}
-              onChangeText={setEndTime}
-            />
-          </View>
-        </View>
+            >
+              {allFaculty.map(faculty => {
+                const isSelected = faculty.id === selectedFacultyId;
+                return (
+                  <TouchableOpacity
+                    key={faculty.id}
+                    style={[
+                      styles.dropdownItem,
+                      isSelected && { backgroundColor: 'rgba(99, 102, 241, 0.15)' },
+                    ]}
+                    onPress={() => {
+                      setSelectedFacultyId(faculty.id);
+                      setShowFacultyDropdown(false);
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.facultyItemName, { color: colors.text }]}>{faculty.name}</Text>
+                      <Text style={[styles.facultyItemDept, { color: colors.subText }]}>
+                        ID: {faculty.regNo || 'FAC-2026-101'} • {faculty.department}
+                      </Text>
+                    </View>
+                    {isSelected && <Icon name="check" size={14} color={colors.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
 
-        <Text style={[styles.label, { color: colors.subText }]}>Priority Level</Text>
-        <View style={styles.priorityRow}>
-          {(['High', 'Medium', 'Low'] as Priority[]).map(p => {
-            const isSelected = priority === p;
-            let activeStyle = styles.priorityHigh;
-            if (p === 'Medium') activeStyle = styles.priorityMedium;
-            if (p === 'Low') activeStyle = styles.priorityLow;
+          {/* Task Title */}
+          <Text style={[styles.label, { color: colors.subText }]}>Task Title / Subject *</Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.inputBg,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="e.g. CS-301 Lecture Preparation & Lab Exam"
+            placeholderTextColor={colors.mutedText}
+          />
 
-            return (
-              <TouchableOpacity
-                key={p}
+          {/* Task Description */}
+          <Text style={[styles.label, { color: colors.subText }]}>Detailed Description & Instructions</Text>
+          <TextInput
+            style={[
+              styles.textArea,
+              {
+                backgroundColor: colors.inputBg,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Specify lecture topics, classroom numbers, syllabus details..."
+            placeholderTextColor={colors.mutedText}
+            multiline
+            numberOfLines={3}
+          />
+
+          {/* Date Input */}
+          <Text style={[styles.label, { color: colors.subText }]}>Task Date (YYYY-MM-DD)</Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.inputBg,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
+            value={date}
+            onChangeText={setDate}
+            placeholder="2026-08-13"
+            placeholderTextColor={colors.mutedText}
+          />
+
+          {/* Time Slot Inputs */}
+          <View style={styles.timeRow}>
+            <View style={styles.timeCol}>
+              <Text style={[styles.label, { color: colors.subText }]}>Start Time</Text>
+              <TextInput
                 style={[
-                  styles.priorityBadge,
+                  styles.input,
                   {
-                    backgroundColor: isSelected ? activeStyle.backgroundColor : colors.surface,
-                    borderColor: isSelected ? activeStyle.borderColor : colors.inputBorder,
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
                   },
                 ]}
-                onPress={() => setPriority(p)}
-              >
-                <Text
+                value={startTime}
+                onChangeText={setStartTime}
+                placeholder="09:00"
+                placeholderTextColor={colors.mutedText}
+              />
+            </View>
+            <View style={styles.timeCol}>
+              <Text style={[styles.label, { color: colors.subText }]}>End Time</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.inputBg,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
+                  },
+                ]}
+                value={endTime}
+                onChangeText={setEndTime}
+                placeholder="11:00"
+                placeholderTextColor={colors.mutedText}
+              />
+            </View>
+          </View>
+
+          {/* Priority Level Segment Selector */}
+          <Text style={[styles.label, { color: colors.subText }]}>Priority Level</Text>
+          <View style={[styles.priorityRow, { backgroundColor: colors.surface }]}>
+            {(['High', 'Medium', 'Low'] as Priority[]).map(p => {
+              const active = priority === p;
+              let activeBg = colors.primary;
+              if (p === 'High') activeBg = '#EF4444';
+              if (p === 'Medium') activeBg = '#F59E0B';
+              if (p === 'Low') activeBg = '#3B82F6';
+
+              return (
+                <TouchableOpacity
+                  key={p}
                   style={[
-                    styles.priorityText,
-                    {
-                      color: isSelected ? '#FFFFFF' : colors.subText,
-                      fontWeight: isSelected ? '700' : '600',
-                    },
+                    styles.priorityBtn,
+                    active && { backgroundColor: activeBg },
                   ]}
+                  onPress={() => setPriority(p)}
                 >
-                  {p}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.priorityBtnText,
+                      { color: active ? '#FFFFFF' : colors.subText },
+                    ]}
+                  >
+                    {p} Priority
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Submit Action Button */}
+          <TouchableOpacity
+            style={[styles.submitBtn, { backgroundColor: colors.primary }]}
+            onPress={handleSubmit}
+            activeOpacity={0.85}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="plus" size={16} color="#FFFFFF" />
+              <Text style={[styles.submitBtnText, { marginLeft: 6 }]}>Confirm & Assign Task</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
-
-      {/* Submit Button */}
-      <TouchableOpacity
-        style={[styles.submitBtn, { backgroundColor: colors.primary }]}
-        onPress={handleSubmit}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.submitBtnText}>Assign Task & Notify Faculty →</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -319,146 +324,141 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
     paddingBottom: 30,
   },
+  cleanHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  headerLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cleanHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginLeft: 8,
+  },
   backBtn: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    marginBottom: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
   },
   backBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
-  headerBox: {
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1,
-  },
-  badge: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    marginTop: 4,
-    lineHeight: 18,
+  formPadding: {
+    padding: 16,
   },
   card: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
+    borderRadius: 20,
+    padding: 18,
     borderWidth: 1,
-  },
-  cardSectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 12,
   },
   label: {
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 6,
-    marginTop: 10,
+    marginTop: 12,
   },
-  input: {
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    borderWidth: 1,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  dropdownBtn: {
+  dropdownSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    borderRadius: 12,
     borderWidth: 1,
   },
-  dropdownBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  dropdownMenu: {
-    borderRadius: 10,
-    marginTop: 6,
-    borderWidth: 1,
-    maxHeight: 160,
-  },
-  dropdownOption: {
-    padding: 12,
-    borderBottomWidth: 1,
-  },
-  facultyOptionName: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  facultyOptionDept: {
-    fontSize: 12,
-  },
-  row: {
+  selectedFacultyRow: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
-  flex1: {
+  selectedFacultyName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  selectedFacultyMeta: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  dropdownList: {
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  facultyItemName: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  facultyItemDept: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  input: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 14,
+  },
+  textArea: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    fontSize: 14,
+    textAlignVertical: 'top',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    marginHorizontal: -4,
+  },
+  timeCol: {
     flex: 1,
-  },
-  spacer: {
-    width: 12,
+    marginHorizontal: 4,
   },
   priorityRow: {
     flexDirection: 'row',
-    marginTop: 8,
+    borderRadius: 10,
+    padding: 3,
+    marginTop: 4,
   },
-  priorityBadge: {
+  priorityBtn: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 8,
-    borderWidth: 1,
     alignItems: 'center',
-    marginRight: 8,
   },
-  priorityHigh: {
-    backgroundColor: '#EF4444',
-    borderColor: '#EF4444',
-  },
-  priorityMedium: {
-    backgroundColor: '#F59E0B',
-    borderColor: '#F59E0B',
-  },
-  priorityLow: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  priorityText: {
-    fontSize: 13,
+  priorityBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   submitBtn: {
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 14,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 20,
   },
   submitBtnText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

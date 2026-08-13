@@ -30,140 +30,129 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.scrollContent}
     >
-      <View
-        style={[
-          styles.headerBox,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.cardBorder,
-          },
-        ]}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-          <Icon name="analytics" size={20} color={colors.primary} />
-          <Text style={[styles.badge, { color: colors.primary, marginLeft: 6 }]}>
-            Analytics & Performance Reports
-          </Text>
-        </View>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Task Metrics Overview</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.subText }]}>
-          Real-time tracking of task fulfillment, priority ratios, and faculty remarks.
-        </Text>
-      </View>
-
-      {/* Completion Rate Banner */}
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.cardBorder,
-          },
-        ]}
-      >
-        <Text style={[styles.cardTitle, { color: colors.subText }]}>Overall Task Completion Rate</Text>
-        <View style={styles.rateRow}>
-          <Text style={styles.ratePercent}>{completionRate}%</Text>
-          <View style={styles.rateSubTextGroup}>
-            <Text style={[styles.rateSubTitle, { color: colors.text }]}>
-              {completed} of {total} Tasks Completed
-            </Text>
-            <Text style={[styles.rateSubDesc, { color: colors.subText }]}>
-              {pending} tasks currently pending action
-            </Text>
-          </View>
-        </View>
-
-        {/* Progress Meter Bar */}
-        <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
-          <View style={[styles.progressFill, { width: `${completionRate}%` }]} />
+      {/* Clean & Simple Top Header */}
+      <View style={[styles.cleanHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        <View style={styles.headerLeftGroup}>
+          <Icon name="analytics" size={18} color={colors.primary} />
+          <Text style={[styles.cleanHeaderTitle, { color: colors.text }]}>Analytics & Reports</Text>
         </View>
       </View>
 
-      {/* Priority Distribution Cards */}
-      <Text style={[styles.sectionHeader, { color: colors.text }]}>Task Distribution by Priority</Text>
-      <View style={styles.priorityGrid}>
+      <View style={styles.bodyContent}>
+        {/* Completion Rate Banner */}
         <View
           style={[
-            styles.priorityCard,
-            { backgroundColor: colors.card, borderColor: colors.cardBorder },
-            styles.highBorder,
+            styles.card,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.cardBorder,
+            },
           ]}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Icon name="alert" size={14} color="#EF4444" />
-            <Text style={[styles.priorityNum, styles.highText, { marginLeft: 4 }]}>{highPriority}</Text>
-          </View>
-          <Text style={[styles.priorityLabel, { color: colors.subText }]}>High Priority</Text>
-        </View>
-
-        <View
-          style={[
-            styles.priorityCard,
-            { backgroundColor: colors.card, borderColor: colors.cardBorder },
-            styles.medBorder,
-          ]}
-        >
-          <Text style={[styles.priorityNum, styles.medText]}>{mediumPriority}</Text>
-          <Text style={[styles.priorityLabel, { color: colors.subText }]}>Medium Priority</Text>
-        </View>
-
-        <View
-          style={[
-            styles.priorityCard,
-            { backgroundColor: colors.card, borderColor: colors.cardBorder },
-            styles.lowBorder,
-          ]}
-        >
-          <Text style={[styles.priorityNum, styles.lowText]}>{lowPriority}</Text>
-          <Text style={[styles.priorityLabel, { color: colors.subText }]}>Low Priority</Text>
-        </View>
-      </View>
-
-      {/* Recent Faculty Remarks History */}
-      <Text style={[styles.sectionHeader, { color: colors.text }]}>
-        Submitted Faculty Completion Remarks ({completedTasksWithNotes.length})
-      </Text>
-      <FlatList
-        data={completedTasksWithNotes}
-        keyExtractor={t => t.id}
-        scrollEnabled={false}
-        ListEmptyComponent={
-          <Text style={[styles.noDataText, { color: colors.mutedText }]}>
-            No task completion remarks submitted yet.
-          </Text>
-        }
-        renderItem={({ item }) => {
-          const faculty = allFaculty.find(f => f.id === item.assignedTo);
-          return (
-            <View
-              style={[
-                styles.remarkLogCard,
-                { backgroundColor: colors.card, borderColor: colors.cardBorder },
-              ]}
-            >
-              <View style={styles.remarkHeader}>
-                <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
-                <Text style={styles.facultyBadge}>{item.assignedToName}</Text>
-              </View>
-              <Text style={[styles.deptText, { color: colors.subText }]}>{faculty?.department}</Text>
-              <View style={styles.quoteBox}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                  <Icon name="clipboard" size={12} color="#10B981" />
-                  <Text style={[styles.quoteText, { color: colors.text, marginLeft: 4 }]}>
-                    "{item.completionNote}"
-                  </Text>
-                </View>
-              </View>
-              {item.completedAt && (
-                <Text style={[styles.timestampText, { color: colors.mutedText }]}>
-                  Submitted: {new Date(item.completedAt).toLocaleString()}
-                </Text>
-              )}
+          <Text style={[styles.cardTitle, { color: colors.subText }]}>Overall Task Completion Rate</Text>
+          <View style={styles.rateRow}>
+            <Text style={styles.ratePercent}>{completionRate}%</Text>
+            <View style={styles.rateSubTextGroup}>
+              <Text style={[styles.rateSubTitle, { color: colors.text }]}>
+                {completed} of {total} Tasks Completed
+              </Text>
+              <Text style={[styles.rateSubDesc, { color: colors.subText }]}>
+                {pending} tasks currently pending action
+              </Text>
             </View>
-          );
-        }}
-      />
+          </View>
+
+          {/* Progress Meter Bar */}
+          <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
+            <View style={[styles.progressFill, { width: `${completionRate}%` }]} />
+          </View>
+        </View>
+
+        {/* Priority Distribution Cards */}
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>Task Distribution by Priority</Text>
+        <View style={styles.priorityGrid}>
+          <View
+            style={[
+              styles.priorityCard,
+              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+              styles.highBorder,
+            ]}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="alert" size={14} color="#EF4444" />
+              <Text style={[styles.priorityNum, styles.highText, { marginLeft: 4 }]}>{highPriority}</Text>
+            </View>
+            <Text style={[styles.priorityLabel, { color: colors.subText }]}>High Priority</Text>
+          </View>
+
+          <View
+            style={[
+              styles.priorityCard,
+              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+              styles.medBorder,
+            ]}
+          >
+            <Text style={[styles.priorityNum, styles.medText]}>{mediumPriority}</Text>
+            <Text style={[styles.priorityLabel, { color: colors.subText }]}>Medium Priority</Text>
+          </View>
+
+          <View
+            style={[
+              styles.priorityCard,
+              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+              styles.lowBorder,
+            ]}
+          >
+            <Text style={[styles.priorityNum, styles.lowText]}>{lowPriority}</Text>
+            <Text style={[styles.priorityLabel, { color: colors.subText }]}>Low Priority</Text>
+          </View>
+        </View>
+
+        {/* Recent Faculty Remarks History */}
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>
+          Submitted Faculty Completion Remarks ({completedTasksWithNotes.length})
+        </Text>
+        <FlatList
+          data={completedTasksWithNotes}
+          keyExtractor={t => t.id}
+          scrollEnabled={false}
+          ListEmptyComponent={
+            <Text style={[styles.noDataText, { color: colors.mutedText }]}>
+              No task completion remarks submitted yet.
+            </Text>
+          }
+          renderItem={({ item }) => {
+            const faculty = allFaculty.find(f => f.id === item.assignedTo);
+            return (
+              <View
+                style={[
+                  styles.remarkLogCard,
+                  { backgroundColor: colors.card, borderColor: colors.cardBorder },
+                ]}
+              >
+                <View style={styles.remarkHeader}>
+                  <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
+                  <Text style={styles.facultyBadge}>{item.assignedToName}</Text>
+                </View>
+                <Text style={[styles.deptText, { color: colors.subText }]}>{faculty?.department}</Text>
+                <View style={styles.quoteBox}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                    <Icon name="clipboard" size={12} color="#10B981" />
+                    <Text style={[styles.quoteText, { color: colors.text, marginLeft: 4 }]}>
+                      "{item.completionNote}"
+                    </Text>
+                  </View>
+                </View>
+                {item.completedAt && (
+                  <Text style={[styles.timestampText, { color: colors.mutedText }]}>
+                    Submitted: {new Date(item.completedAt).toLocaleString()}
+                  </Text>
+                )}
+              </View>
+            );
+          }}
+        />
+      </View>
     </ScrollView>
   );
 };
@@ -173,28 +162,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
     paddingBottom: 30,
   },
-  headerBox: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
+  cleanHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
   },
-  badge: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+  headerLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 20,
+  cleanHeaderTitle: {
+    fontSize: 18,
     fontWeight: '800',
+    marginLeft: 8,
   },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 4,
+  bodyContent: {
+    padding: 16,
   },
   card: {
     borderRadius: 16,

@@ -44,29 +44,21 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header Banner */}
-      <View style={[styles.headerCard, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
-        <View style={styles.headerTitleRow}>
-          <View style={[styles.headerIconBadge, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
-            <Icon name="users" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.flex1}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Faculty Directory & Credentials</Text>
-            <Text style={[styles.headerSubtitle, { color: colors.subText }]}>
-              Manage faculty credentials, registration IDs, passwords, and assigned workloads.
-            </Text>
-          </View>
+      {/* Clean & Simple Header */}
+      <View style={[styles.cleanHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        <View style={styles.headerLeftGroup}>
+          <Icon name="users" size={18} color={colors.primary} />
+          <Text style={[styles.cleanHeaderTitle, { color: colors.text }]}>Faculty Directory</Text>
         </View>
 
-        {/* Primary Action Button */}
         <TouchableOpacity
-          style={[styles.addFacultyBtn, { backgroundColor: colors.secondary }]}
+          style={[styles.simpleAddBtn, { backgroundColor: colors.secondary }]}
           onPress={() => setAddModalVisible(true)}
-          activeOpacity={0.85}
+          activeOpacity={0.8}
         >
-          <View style={styles.btnRow}>
-            <Icon name="plus" size={16} color="#FFFFFF" />
-            <Text style={styles.addFacultyBtnText}>Add New Faculty Member</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="plus" size={14} color="#FFFFFF" />
+            <Text style={styles.simpleAddBtnText}> Add Faculty</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -88,39 +80,35 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
               onPress={() => setSelectedFaculty(item)}
               activeOpacity={0.85}
             >
-              {/* Profile Top Content (No Avatar & No Academic Title) */}
-              <View style={styles.cardHeaderContent}>
-                <View style={styles.facultyMetaInfo}>
+              {/* Profile Meta Row */}
+              <View style={styles.metaRow}>
+                <View style={styles.flex1}>
                   <View style={styles.nameDeptRow}>
                     <Text style={[styles.facultyName, { color: colors.text }]}>{item.name}</Text>
-                    <View style={[styles.deptPill, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
+                    <View style={[styles.deptPill, { backgroundColor: 'rgba(99, 102, 241, 0.12)' }]}>
                       <Text style={[styles.deptPillText, { color: colors.primary }]}>{item.department}</Text>
                     </View>
                   </View>
 
-                  {/* Credentials Box: Reg No & Password */}
+                  {/* Credentials Row */}
                   <View style={[styles.credentialsBox, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}>
                     <View style={styles.credentialItem}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Icon name="user" size={12} color={colors.primary} />
-                        <Text style={[styles.credentialLabel, { color: colors.subText }]}> Faculty Reg. No:</Text>
-                      </View>
-                      <Text style={[styles.credentialValue, { color: colors.primary }]}>{facultyRegNo}</Text>
+                      <Icon name="user" size={12} color={colors.primary} />
+                      <Text style={[styles.credentialLabel, { color: colors.subText }]}> Reg. No:</Text>
+                      <Text style={[styles.credentialVal, { color: colors.primary }]}>{facultyRegNo}</Text>
                     </View>
 
                     <View style={[styles.credentialDivider, { backgroundColor: colors.cardBorder }]} />
 
                     <View style={styles.credentialItem}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Icon name="lock" size={12} color="#F59E0B" />
-                        <Text style={[styles.credentialLabel, { color: colors.subText }]}> Password:</Text>
-                      </View>
-                      <Text style={[styles.credentialValue, { color: colors.text }]}>{facultyPassword}</Text>
+                      <Icon name="lock" size={12} color="#F59E0B" />
+                      <Text style={[styles.credentialLabel, { color: colors.subText }]}> Password:</Text>
+                      <Text style={[styles.credentialVal, { color: colors.text }]}>{facultyPassword}</Text>
                     </View>
                   </View>
 
-                  {/* Email Row */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                  {/* Email */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
                     <Icon name="mail" size={12} color={colors.subText} />
                     <Text style={[styles.emailText, { color: colors.subText }]} numberOfLines={1}>
                       {item.email}
@@ -129,7 +117,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                 </View>
               </View>
 
-              {/* Workload Metric Bar */}
+              {/* Workload Stats & Quick Actions Bar */}
               <View style={[styles.workloadBar, { backgroundColor: colors.surface }]}>
                 <View style={styles.statPill}>
                   <Text style={[styles.statNumText, { color: colors.text }]}>{stats.total}</Text>
@@ -289,74 +277,47 @@ const styles = StyleSheet.create({
   flex1: {
     flex: 1,
   },
-  headerCard: {
-    padding: 16,
+  cleanHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
-  headerTitleRow: {
+  headerLeftGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
-  headerIconBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  headerTitle: {
-    fontSize: 19,
+  cleanHeaderTitle: {
+    fontSize: 18,
     fontWeight: '800',
+    marginLeft: 8,
   },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  addFacultyBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 14,
+  simpleAddBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  btnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  addFacultyBtnText: {
+  simpleAddBtnText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
-    marginLeft: 6,
   },
   listContainer: {
     padding: 16,
     paddingBottom: 24,
   },
   facultyCard: {
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 14,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
   },
-  cardHeaderContent: {
-    marginBottom: 14,
-  },
-  facultyMetaInfo: {
-    flex: 1,
+  metaRow: {
+    marginBottom: 12,
   },
   nameDeptRow: {
     flexDirection: 'row',
@@ -365,7 +326,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   facultyName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
     flex: 1,
     marginRight: 8,
@@ -384,7 +345,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
     borderWidth: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     marginVertical: 4,
   },
@@ -392,21 +353,20 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   credentialLabel: {
     fontSize: 11,
     fontWeight: '600',
   },
-  credentialValue: {
+  credentialVal: {
     fontSize: 12,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    marginLeft: 4,
   },
   credentialDivider: {
     width: 1,
-    height: 18,
-    marginHorizontal: 10,
+    height: 16,
+    marginHorizontal: 8,
   },
   emailText: {
     fontSize: 12,
@@ -417,14 +377,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
   },
   statPill: {
-    marginRight: 16,
+    marginRight: 14,
   },
   statNumText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
   pendingColor: {
@@ -436,7 +396,7 @@ const styles = StyleSheet.create({
   statLabelText: {
     fontSize: 10,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 1,
   },
   actionBtnGroup: {
     flexDirection: 'row',
@@ -444,9 +404,9 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   quickAssignBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
     marginRight: 6,
   },
   quickAssignBtnText: {
@@ -456,9 +416,9 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   viewTasksBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   viewTasksBtnText: {
     fontSize: 12,
