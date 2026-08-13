@@ -38,6 +38,13 @@ interface AdminNavigatorProps {
     title: string;
     avatar?: string;
   }) => void;
+  onUpdateFaculty: (updatedData: {
+    id: string;
+    name: string;
+    email: string;
+    department: string;
+    regNo: string;
+  }) => void;
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   onLogout: () => void;
@@ -50,6 +57,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
   onSelectDate,
   onAssignTask,
   onAddFaculty,
+  onUpdateFaculty,
   activeTab,
   onTabChange,
   onLogout,
@@ -88,6 +96,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
             allTasks={allTasks}
             onAddFaculty={onAddFaculty}
             onAssignTaskForFaculty={handleAssignTaskForFaculty}
+            onUpdateFaculty={onUpdateFaculty}
           />
         );
       case 'analytics':
@@ -286,6 +295,19 @@ export const AppNavigator: React.FC = () => {
     }
   };
 
+  const handleUpdateFaculty = (updatedData: {
+    id: string;
+    name: string;
+    email: string;
+    department: string;
+    regNo: string;
+  }) => {
+    setAllFaculty(prev =>
+      prev.map(f => (f.id === updatedData.id ? { ...f, ...updatedData } : f))
+    );
+    Alert.alert('Faculty Updated', `Successfully updated profile details for ${updatedData.name}.`);
+  };
+
   // Faculty Handlers
   const handleCompleteTask = async (taskId: string, note: string) => {
     try {
@@ -332,6 +354,7 @@ export const AppNavigator: React.FC = () => {
             onSelectDate={setSelectedDate}
             onAssignTask={handleAssignTask}
             onAddFaculty={handleAddFaculty}
+            onUpdateFaculty={handleUpdateFaculty}
             activeTab={activeAdminTab}
             onTabChange={setActiveAdminTab}
             onLogout={handleLogout}

@@ -98,12 +98,15 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
 
           let priorityStyle = styles.priorityMediumTag;
           let priorityTextStyle = styles.priorityMediumText;
+          let priorityIcon: 'alert' | 'clock' | 'check' = 'clock';
           if (item.priority === 'High') {
             priorityStyle = styles.priorityHighTag;
             priorityTextStyle = styles.priorityHighText;
+            priorityIcon = 'alert';
           } else if (item.priority === 'Low') {
             priorityStyle = styles.priorityLowTag;
             priorityTextStyle = styles.priorityLowText;
+            priorityIcon = 'check';
           }
 
           return (
@@ -120,12 +123,21 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
                   <Text style={[styles.timeText, { color: colors.text, marginLeft: 4 }]}>{item.startTime}</Text>
                 </View>
                 <Text style={[styles.timeSubtext, { color: colors.mutedText }]}>to {item.endTime}</Text>
+
+                {/* Status indicator */}
+                <View style={[styles.statusIndicator, isCompleted ? styles.statusDoneBg : styles.statusPendingBg]}>
+                  <Icon name={isCompleted ? 'check' : 'clock'} size={8} color={isCompleted ? '#10B981' : '#F59E0B'} />
+                  <Text style={[styles.statusIndicatorText, isCompleted ? styles.completedColor : styles.pendingColor]}>
+                    {isCompleted ? 'Done' : 'Active'}
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.cardContent}>
                 <View style={styles.cardHeaderRow}>
                   <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
                   <View style={[styles.priorityTag, priorityStyle]}>
+                    <Icon name={priorityIcon} size={8} color={priorityTextStyle.color} />
                     <Text style={[styles.priorityTagText, priorityTextStyle]}>
                       {item.priority}
                     </Text>
@@ -136,17 +148,23 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
                   <Text style={[styles.taskDesc, { color: colors.subText }]}>{item.description}</Text>
                 ) : null}
 
-                <Text style={[styles.assignedByText, { color: colors.mutedText }]}>
-                  Assigned by: {item.assignedBy}
-                </Text>
+                {/* Assigned by info */}
+                <View style={[styles.assignedByRow, { backgroundColor: colors.surface }]}>
+                  <Icon name="user" size={10} color={colors.primary} />
+                  <Text style={[styles.assignedByText, { color: colors.mutedText }]}>
+                    Assigned by: <Text style={{ color: colors.text, fontWeight: '600' }}>{item.assignedBy}</Text>
+                  </Text>
+                </View>
 
                 {/* Completion Status / Remarks Box */}
                 {isCompleted ? (
                   <View style={styles.completedRemarkBox}>
                     <View style={styles.completedHeaderRow}>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Icon name="check" size={14} color="#10B981" />
-                        <Text style={[styles.completedCheckMark, { marginLeft: 4 }]}>Completed</Text>
+                        <View style={styles.completedCheckCircle}>
+                          <Icon name="check" size={10} color="#FFFFFF" />
+                        </View>
+                        <Text style={[styles.completedCheckMark, { marginLeft: 6 }]}>Completed</Text>
                       </View>
                       {item.completedAt && (
                         <Text style={[styles.completedTime, { color: colors.mutedText }]}>
@@ -169,8 +187,10 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
                     activeOpacity={0.8}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                      <Icon name="check" size={14} color="#FFFFFF" />
-                      <Text style={[styles.completeActionBtnText, { marginLeft: 6 }]}>
+                      <View style={styles.completeBtnIconCircle}>
+                        <Icon name="check" size={12} color="#FFFFFF" />
+                      </View>
+                      <Text style={[styles.completeActionBtnText, { marginLeft: 8 }]}>
                         Mark Completed & Submit Remarks
                       </Text>
                     </View>
@@ -293,6 +313,32 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
   },
+  statusIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    gap: 3,
+  },
+  statusDoneBg: {
+    backgroundColor: 'rgba(16,185,129,0.15)',
+  },
+  statusPendingBg: {
+    backgroundColor: 'rgba(245,158,11,0.15)',
+  },
+  statusIndicatorText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  completedColor: {
+    color: '#10B981',
+  },
+  pendingColor: {
+    color: '#F59E0B',
+  },
   cardContent: {
     flex: 1,
     paddingLeft: 12,
@@ -309,10 +355,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   priorityTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 8,
+    gap: 3,
   },
   priorityHighTag: {
     borderColor: '#EF4444',
@@ -336,21 +385,38 @@ const styles = StyleSheet.create({
   priorityLowText: {
     color: '#3B82F6',
   },
-  taskDesc: {
-    fontSize: 13,
-    marginTop: 6,
-    lineHeight: 18,
+  taskDesc: { fontSize: 13, marginTop: 6, lineHeight: 18 },
+  assignedByRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    gap: 6,
   },
   assignedByText: {
     fontSize: 11,
-    marginTop: 8,
   },
   completeActionBtn: {
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: 12,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  completeBtnIconCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   completeActionBtnText: {
     color: '#FFFFFF',
@@ -359,17 +425,25 @@ const styles = StyleSheet.create({
   },
   completedRemarkBox: {
     backgroundColor: 'rgba(16,185,129,0.1)',
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    padding: 12,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: 'rgba(16,185,129,0.3)',
+    borderColor: 'rgba(16,185,129,0.25)',
   },
   completedHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  completedCheckCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   completedCheckMark: {
     color: '#10B981',

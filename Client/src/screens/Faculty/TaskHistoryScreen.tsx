@@ -93,24 +93,41 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
         }
         renderItem={({ item }) => {
           const isDone = item.status === 'completed';
+
+          let priorityIcon: 'alert' | 'clock' | 'check' = 'clock';
+          let priorityColor = '#F59E0B';
+          if (item.priority === 'High') {
+            priorityIcon = 'alert';
+            priorityColor = '#EF4444';
+          } else if (item.priority === 'Low') {
+            priorityIcon = 'check';
+            priorityColor = '#3B82F6';
+          }
+
           return (
             <View style={[styles.taskCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              {/* Top accent bar */}
+              <View style={[styles.cardAccentBar, { backgroundColor: isDone ? '#10B981' : '#F59E0B' }]} />
+
               <View style={styles.cardHeader}>
-                <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
-                <View
-                  style={[
-                    styles.badge,
-                    isDone ? styles.doneBadge : styles.pendingBadge,
-                  ]}
-                >
-                  <Text
+                <View style={styles.titleRow}>
+                  <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
+                  <View
                     style={[
-                      styles.badgeText,
-                      isDone ? styles.doneText : styles.pendingText,
+                      styles.badge,
+                      isDone ? styles.doneBadge : styles.pendingBadge,
                     ]}
                   >
-                    {isDone ? 'Completed' : 'Pending'}
-                  </Text>
+                    <Icon name={isDone ? 'check' : 'clock'} size={9} color={isDone ? '#10B981' : '#F59E0B'} />
+                    <Text
+                      style={[
+                        styles.badgeText,
+                        isDone ? styles.doneText : styles.pendingText,
+                      ]}
+                    >
+                      {isDone ? 'Completed' : 'Pending'}
+                    </Text>
+                  </View>
                 </View>
               </View>
 
@@ -118,18 +135,40 @@ export const TaskHistoryScreen: React.FC<TaskHistoryScreenProps> = ({
                 <Text style={[styles.taskDesc, { color: colors.subText }]}>{item.description}</Text>
               ) : null}
 
-              <Text style={[styles.dateMeta, { color: colors.mutedText }]}>
-                Date: {item.date} • {item.startTime} - {item.endTime} • Priority: {item.priority}
-              </Text>
+              {/* Meta info row */}
+              <View style={[styles.metaRow, { backgroundColor: colors.surface }]}>
+                <View style={styles.metaChip}>
+                  <Icon name="calendar" size={10} color={colors.primary} />
+                  <Text style={[styles.metaText, { color: colors.subText }]}>{item.date}</Text>
+                </View>
+                <View style={styles.metaChip}>
+                  <Icon name="clock" size={10} color={colors.subText} />
+                  <Text style={[styles.metaText, { color: colors.subText }]}>{item.startTime} - {item.endTime}</Text>
+                </View>
+                <View style={styles.metaChip}>
+                  <Icon name={priorityIcon} size={10} color={priorityColor} />
+                  <Text style={[styles.metaText, { color: priorityColor, fontWeight: '700' }]}>{item.priority}</Text>
+                </View>
+              </View>
 
               {isDone && item.completionNote ? (
                 <View style={styles.remarkBox}>
-                  <Text style={styles.remarkHeader}>Your Submitted Outcome & Remarks:</Text>
+                  <View style={styles.remarkHeaderRow}>
+                    <View style={styles.remarkHeaderLeft}>
+                      <View style={styles.remarkCheckCircle}>
+                        <Icon name="check" size={8} color="#FFFFFF" />
+                      </View>
+                      <Text style={styles.remarkHeader}>Your Submitted Outcome & Remarks:</Text>
+                    </View>
+                  </View>
                   <Text style={[styles.remarkText, { color: colors.text }]}>"{item.completionNote}"</Text>
                   {item.completedAt && (
-                    <Text style={[styles.completedAtText, { color: colors.mutedText }]}>
-                      Submitted on: {new Date(item.completedAt).toLocaleString()}
-                    </Text>
+                    <View style={styles.completedAtRow}>
+                      <Icon name="clock" size={9} color={colors.mutedText} />
+                      <Text style={[styles.completedAtText, { color: colors.mutedText }]}>
+                        Submitted on: {new Date(item.completedAt).toLocaleString()}
+                      </Text>
+                    </View>
                   )}
                 </View>
               ) : null}
@@ -176,12 +215,21 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   taskCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 18,
+    padding: 0,
+    marginBottom: 14,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  cardAccentBar: {
+    height: 3,
   },
   cardHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
@@ -193,28 +241,77 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 8,
+    gap: 4,
   },
   doneBadge: { backgroundColor: 'rgba(16,185,129,0.15)' },
   pendingBadge: { backgroundColor: 'rgba(245,158,11,0.15)' },
   badgeText: { fontSize: 11, fontWeight: '700' },
   doneText: { color: '#10B981' },
   pendingText: { color: '#F59E0B' },
-  taskDesc: { fontSize: 13, marginTop: 6 },
-  dateMeta: { fontSize: 11, marginTop: 8 },
+  taskDesc: { fontSize: 13, marginTop: 6, paddingHorizontal: 16, lineHeight: 18 },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    gap: 12,
+    flexWrap: 'wrap',
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
   remarkBox: {
     backgroundColor: 'rgba(16,185,129,0.08)',
     borderLeftWidth: 3,
     borderLeftColor: '#10B981',
-    padding: 10,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 10,
+    marginHorizontal: 16,
     marginTop: 10,
+    marginBottom: 14,
+  },
+  remarkHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  remarkHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  remarkCheckCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#10B981',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   remarkHeader: { color: '#10B981', fontSize: 11, fontWeight: '700' },
   remarkText: { fontSize: 12, fontStyle: 'italic', marginTop: 2 },
-  completedAtText: { fontSize: 10, marginTop: 4 },
+  completedAtRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 4,
+  },
+  completedAtText: { fontSize: 10 },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyTitle: { fontSize: 16, fontWeight: '700' },
   emptySubtitle: { fontSize: 13, textAlign: 'center', marginTop: 4 },

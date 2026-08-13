@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  Image,
 } from 'react-native';
 import { Task, User, Priority } from '../../../types';
 import { CalendarStrip } from '../../../components/common/CalendarStrip';
@@ -163,14 +162,32 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           const faculty = allFaculty.find(f => f.id === item.assignedTo);
           const isCompleted = item.status === 'completed';
 
+          // Avatar initials and color
+          const facultyName = item.assignedToName || faculty?.name || 'Unknown';
+          const initials = facultyName
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+
+          const avatarColors = [
+            '#6366F1', '#8B5CF6', '#EC4899', '#F59E0B',
+            '#10B981', '#3B82F6', '#EF4444', '#14B8A6',
+          ];
+          const avatarBg = avatarColors[facultyName.length % avatarColors.length];
+
           let priorityStyle = styles.priorityMediumTag;
           let priorityTextStyle = styles.priorityMediumText;
+          let priorityIcon: 'alert' | 'clock' | 'check' = 'clock';
           if (item.priority === 'High') {
             priorityStyle = styles.priorityHighTag;
             priorityTextStyle = styles.priorityHighText;
+            priorityIcon = 'alert';
           } else if (item.priority === 'Low') {
             priorityStyle = styles.priorityLowTag;
             priorityTextStyle = styles.priorityLowText;
+            priorityIcon = 'check';
           }
 
           return (
@@ -195,13 +212,14 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     isCompleted ? styles.statusDonePillBg : styles.statusPendingPillBg,
                   ]}
                 >
+                  <Icon name={isCompleted ? 'check' : 'clock'} size={8} color={isCompleted ? '#10B981' : '#F59E0B'} />
                   <Text
                     style={[
                       styles.statusPillText,
                       isCompleted ? styles.completedColor : styles.pendingColor,
                     ]}
                   >
-                    {isCompleted ? 'Completed' : 'Pending'}
+                    {isCompleted ? 'Done' : 'Pending'}
                   </Text>
                 </View>
               </View>
@@ -211,6 +229,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                 <View style={styles.cardHeaderRow}>
                   <Text style={[styles.taskTitleText, { color: colors.text }]}>{item.title}</Text>
                   <View style={[styles.priorityBadge, priorityStyle]}>
+                    <Icon name={priorityIcon} size={8} color={priorityTextStyle.color} />
                     <Text style={[styles.priorityBadgeText, priorityTextStyle]}>
                       {item.priority}
                     </Text>
@@ -221,23 +240,26 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                   <Text style={[styles.taskDescText, { color: colors.subText }]}>{item.description}</Text>
                 ) : null}
 
-                {/* Faculty Assignee Row */}
-                <View style={styles.facultyRowBox}>
-                  {faculty?.avatar ? (
-                    <Image source={{ uri: faculty.avatar }} style={styles.facultyAvatarImage} />
-                  ) : null}
+                {/* Faculty Assignee Row with Avatar */}
+                <View style={[styles.facultyRowBox, { backgroundColor: colors.surface }]}>
+                  <View style={[styles.facultyAvatarCircle, { backgroundColor: avatarBg }]}>
+                    <Text style={styles.facultyAvatarInitials}>{initials}</Text>
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.facultyNameText, { color: colors.text }]}>{item.assignedToName}</Text>
                     <Text style={[styles.facultyDeptText, { color: colors.subText }]}>
                       {faculty?.department || 'Academic Faculty'}
                     </Text>
                   </View>
+                  <View style={[styles.assigneeBadge, { backgroundColor: `${avatarBg}18` }]}>
+                    <Text style={[styles.assigneeBadgeText, { color: avatarBg }]}>Assigned</Text>
+                  </View>
                 </View>
 
                 {/* Completion Remarks Box */}
                 {isCompleted && item.completionNote ? (
                   <View style={styles.completionRemarkContainer}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                       <Icon name="clipboard" size={12} color="#10B981" />
                       <Text style={styles.remarkHeaderLabel}>Faculty Completion Remarks:</Text>
                     </View>
@@ -405,11 +427,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 6,
     marginTop: 10,
     alignSelf: 'flex-start',
+    gap: 3,
   },
   statusPendingPillBg: {
     backgroundColor: 'rgba(245, 158, 11, 0.15)',
@@ -437,10 +462,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   priorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 8,
+    gap: 3,
   },
   priorityHighTag: {
     borderColor: '#EF4444',
@@ -476,14 +504,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
+    padding: 8,
+    borderRadius: 10,
   },
-  facultyAvatarImage: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  facultyAvatarCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#6366F1',
+  },
+  facultyAvatarInitials: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   facultyNameText: {
     fontSize: 12,
@@ -496,9 +532,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(16, 185, 129, 0.08)',
     borderLeftWidth: 3,
     borderLeftColor: '#10B981',
-    padding: 8,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 10,
     marginTop: 10,
+  },
+  assigneeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  assigneeBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   remarkHeaderLabel: {
     color: '#10B981',
