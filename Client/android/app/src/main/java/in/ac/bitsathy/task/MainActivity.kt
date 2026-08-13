@@ -1,4 +1,4 @@
-package com.client
+package `in`.ac.bitsathy.task
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

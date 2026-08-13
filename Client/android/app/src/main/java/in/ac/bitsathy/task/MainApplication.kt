@@ -1,4 +1,4 @@
-package com.client
+package `in`.ac.bitsathy.task
 
 import android.app.Application
 import com.facebook.react.PackageList
