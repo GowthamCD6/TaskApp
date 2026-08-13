@@ -1,113 +1,127 @@
-const fs = require('fs');
-const path = require('path');
-const { runMigrations } = require('../migrations/migrate');
+const { pool } = require('../config/db');
 
-const DATA_DIR = path.join(__dirname, '../data');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-
-// Helper to read users from data store with auto-migration fallback
-const readUsersFromFile = () => {
-  if (!fs.existsSync(USERS_FILE)) {
-    console.log('⚡ Users data store missing. Auto-running database migrations...');
-    runMigrations();
-  }
+// GET /api/users
+const getUsers = async (req, res) => {
   try {
-    const raw = fs.readFileSync(USERS_FILE, 'utf-8');
-    return JSON.parse(raw);
+    const { role } = req.query;
+    let query = 'SELECT id, google_id as googleId, name, email, role, department, title, avatar, created_at as createdAt FROM users';
+    const params = [];
+
+    if (role) {
+      query += ' WHERE LOWER(role) = LOWER(?)';
+      params.push(role);
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const [users] = await pool.query(query, params);
+
+    res.status(200).json({
+      status: 'success',
+      results: users.length,
+      data: users,
+    });
   } catch (err) {
-    console.error('Error reading users file:', err);
-    return [];
-  }
-};
-
-// Helper to save users to data store
-const writeUsersToFile = (users) => {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf-8');
-};
-
-const getUsers = (req, res) => {
-  const { role } = req.query;
-  const users = readUsersFromFile();
-  let filteredUsers = users;
-
-  if (role) {
-    filteredUsers = users.filter(u => u.role.toLowerCase() === role.toLowerCase());
-  }
-
-  res.status(200).json({
-    status: 'success',
-    results: filteredUsers.length,
-    data: filteredUsers,
-  });
-};
-
-const getUserById = (req, res) => {
-  const { id } = req.params;
-  const users = readUsersFromFile();
-  const user = users.find(u => u.id === id);
-
-  if (!user) {
-    return res.status(404).json({
+    console.error('Error fetching users:', err);
+    res.status(500).json({
       status: 'error',
-      message: 'User not found',
+      message: 'Failed to fetch users',
     });
   }
+};
 
-  res.status(200).json({
-    status: 'success',
-    data: user,
-  });
+// GET /api/users/:id
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [users] = await pool.query(
+      'SELECT id, google_id as googleId, name, email, role, department, title, avatar, created_at as createdAt FROM users WHERE id = ?',
+      [id]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: users[0],
+    });
+  } catch (err) {
+    console.error('Error fetching user by ID:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch user',
+    });
+  }
 };
 
 // POST /api/users (Admin adds a new Faculty member)
-const createUser = (req, res) => {
-  const { name, email, department, title, avatar } = req.body;
+const createUser = async (req, res) => {
+  try {
+    const { name, email, department, title, avatar } = req.body;
 
-  if (!name || !email || !department) {
-    return res.status(400).json({
+    if (!name || !email || !department) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Name, Email, and Department are required',
+      });
+    }
+
+    // Check if email already exists
+    const [existing] = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER(?)', [
+      email.trim(),
+    ]);
+    if (existing.length > 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'A user with this email already exists',
+      });
+    }
+
+    const newUser = {
+      id: `fac-${Date.now()}`,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      role: 'faculty',
+      department: department.trim(),
+      title: title ? title.trim() : 'Assistant Professor',
+      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    };
+
+    await pool.query(
+      `INSERT INTO users (id, name, email, role, department, title, avatar)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        newUser.id,
+        newUser.name,
+        newUser.email,
+        newUser.role,
+        newUser.department,
+        newUser.title,
+        newUser.avatar,
+      ]
+    );
+
+    res.status(201).json({
+      status: 'success',
+      message: `Faculty member ${newUser.name} created successfully`,
+      data: newUser,
+    });
+  } catch (err) {
+    console.error('Error creating user:', err);
+    res.status(500).json({
       status: 'error',
-      message: 'Name, Email, and Department are required',
+      message: 'Failed to create user',
     });
   }
-
-  const users = readUsersFromFile();
-
-  // Check if email already exists
-  const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-  if (existing) {
-    return res.status(400).json({
-      status: 'error',
-      message: 'A user with this email already exists',
-    });
-  }
-
-  const newUser = {
-    id: `fac-${Date.now()}`,
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    role: 'faculty',
-    department: department.trim(),
-    title: title ? title.trim() : 'Assistant Professor',
-    avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-    createdAt: new Date().toISOString(),
-  };
-
-  users.push(newUser);
-  writeUsersToFile(users);
-
-  res.status(201).json({
-    status: 'success',
-    message: `Faculty member ${newUser.name} created successfully`,
-    data: newUser,
-  });
 };
 
 module.exports = {
   getUsers,
   getUserById,
   createUser,
-  readUsersFromFile,
 };

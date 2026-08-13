@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const taskRoutes = require('./routes/taskRoutes');
 const userRoutes = require('./routes/userRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -14,12 +15,13 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'success',
-    message: 'TaskApp Server is running smoothly',
+    message: 'TaskApp Server is running smoothly with TiDB Cloud Database',
     timestamp: new Date().toISOString(),
   });
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tasks', taskRoutes);
 
