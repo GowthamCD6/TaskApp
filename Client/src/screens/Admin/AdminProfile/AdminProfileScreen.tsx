@@ -17,7 +17,8 @@ import { Icon } from '../../../components/common/Icon';
 import { updateUser } from '../../../services/api';
 
 interface AdminProfileScreenProps {
-  currentUser: User | null;
+  currentUser?: User | null;
+  currentAdmin?: User | null;
   allFaculty: User[];
   allTasks: Task[];
   onUpdateUser?: (updated: User) => void;
@@ -26,34 +27,36 @@ interface AdminProfileScreenProps {
 
 export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
   currentUser,
+  currentAdmin,
   allFaculty,
   allTasks,
   onUpdateUser,
   onLogout,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
+  const activeUser = currentUser || currentAdmin || null;
 
-  // State for administrator details synced with currentUser
+  // State for administrator details synced with activeUser
   const [adminUser, setAdminUser] = useState<User>(
-    currentUser || {
-      id: 'admin-1',
-      name: 'Administrator',
-      email: 'admin@university.edu',
-      regNo: 'ADMIN',
+    activeUser || {
+      id: '',
+      name: '',
+      email: '',
+      regNo: '',
       role: 'admin',
-      department: 'Administration',
+      department: '',
       avatar: '',
-      title: 'Academic Administrator',
+      title: '',
       phone: '',
       officeHours: '',
     }
   );
 
   useEffect(() => {
-    if (currentUser) {
-      setAdminUser(currentUser);
+    if (activeUser) {
+      setAdminUser(activeUser);
     }
-  }, [currentUser]);
+  }, [activeUser]);
 
   // Modal State for Editing Profile Details
   const [editModalVisible, setEditModalVisible] = useState(false);

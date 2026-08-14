@@ -70,7 +70,8 @@ const login = async (req, res) => {
 // POST /api/auth/google (Google Sign-In Authentication)
 const googleLogin = async (req, res) => {
   try {
-    const { token, idToken, user: googleUser } = req.body;
+    const { token, idToken, googleUser: bodyGoogleUser, user: bodyUser } = req.body;
+    const googleUser = bodyGoogleUser || bodyUser;
 
     let payload = null;
 

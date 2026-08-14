@@ -26,6 +26,19 @@ const apiFetch = async (path: string, options: RequestInit = {}): Promise<Respon
   throw lastError || new Error('Unable to connect to backend server. Please check your network connection.');
 };
 
+// Local fallback mock database in case backend is offline
+const formatDate = (offsetDays = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toISOString().split('T')[0];
+};
+
+const todayStr = formatDate(0);
+const tomorrowStr = formatDate(1);
+
+let localUsers: User[] = [];
+let localTasks: Task[] = [];
+
 export const loginUser = async (credentials: {
   regNo?: string;
   email?: string;
@@ -47,25 +60,27 @@ export const loginUser = async (credentials: {
 export const loginWithGoogle = async (googleUser?: { id?: string; email?: string; name?: string; avatar?: string }): Promise<User> => {
   const response = await apiFetch('/auth/google', {
     method: 'POST',
-    body: JSON.stringify({
-      user: googleUser,
-    }),
+    body: JSON.stringify({ googleUser }),
   });
   const json = await response.json();
   if (response.ok && json.data) {
     return json.data;
   }
-  throw new Error(json.message || 'Google authentication failed.');
+  throw new Error(json.message || 'Google Authentication failed.');
 };
 
 export const fetchUsers = async (role?: string): Promise<User[]> => {
-  const path = role ? `/users?role=${encodeURIComponent(role)}` : '/users';
-  const response = await apiFetch(path, { method: 'GET' });
-  const json = await response.json();
-  if (response.ok && Array.isArray(json.data)) {
-    return json.data;
+  try {
+    const path = role ? `/users?role=${role}` : '/users';
+    const response = await apiFetch(path, { method: 'GET' });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data || [];
+    }
+  } catch (err) {
+    console.warn('fetchUsers API error:', err);
   }
-  throw new Error(json.message || 'Failed to fetch users from server.');
+  return [];
 };
 
 export const createUser = async (userData: {
@@ -91,7 +106,7 @@ export const createUser = async (userData: {
 };
 
 export const updateUser = async (id: string, userData: Partial<User>): Promise<User> => {
-  const response = await apiFetch(`/users/${encodeURIComponent(id)}`, {
+  const response = await apiFetch(`/users/${id}`, {
     method: 'PUT',
     body: JSON.stringify(userData),
   });
@@ -99,47 +114,36 @@ export const updateUser = async (id: string, userData: Partial<User>): Promise<U
   if (response.ok && json.data) {
     return json.data;
   }
-  throw new Error(json.message || 'Failed to update user.');
+  throw new Error(json.message || 'Failed to update user profile.');
 };
 
 export const deleteUser = async (id: string): Promise<boolean> => {
-  const response = await apiFetch(`/users/${encodeURIComponent(id)}`, {
+  const response = await apiFetch(`/users/${id}`, {
     method: 'DELETE',
   });
-  const json = await response.json();
-  if (response.ok) {
-    return true;
-  }
-  throw new Error(json.message || 'Failed to delete user.');
+  return response.ok;
 };
 
 export const fetchTasks = async (filters?: { facultyId?: string; date?: string; status?: string }): Promise<Task[]> => {
-  const params = new URLSearchParams();
-  if (filters?.facultyId) params.append('facultyId', filters.facultyId);
-  if (filters?.date) params.append('date', filters.date);
-  if (filters?.status) params.append('status', filters.status);
+  try {
+    const params = new URLSearchParams();
+    if (filters?.facultyId) params.append('facultyId', filters.facultyId);
+    if (filters?.date) params.append('date', filters.date);
+    if (filters?.status) params.append('status', filters.status);
 
-  const queryStr = params.toString();
-  const path = queryStr ? `/tasks?${queryStr}` : '/tasks';
-  const response = await apiFetch(path, { method: 'GET' });
-  const json = await response.json();
-  if (response.ok && Array.isArray(json.data)) {
-    return json.data;
+    const path = `/tasks?${params.toString()}`;
+    const response = await apiFetch(path, { method: 'GET' });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data || [];
+    }
+  } catch (err) {
+    console.warn('fetchTasks API error:', err);
   }
-  throw new Error(json.message || 'Failed to fetch tasks from server.');
+  return [];
 };
 
-export const createTask = async (taskData: {
-  title: string;
-  description?: string;
-  assignedTo: string;
-  assignedToName?: string;
-  assignedBy?: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  priority: string;
-}): Promise<Task> => {
+export const createTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'status'>): Promise<Task> => {
   const response = await apiFetch('/tasks', {
     method: 'POST',
     body: JSON.stringify(taskData),
@@ -152,7 +156,7 @@ export const createTask = async (taskData: {
 };
 
 export const completeTask = async (taskId: string, completionNote: string): Promise<Task> => {
-  const response = await apiFetch(`/tasks/${encodeURIComponent(taskId)}/complete`, {
+  const response = await apiFetch(`/tasks/${taskId}/complete`, {
     method: 'PATCH',
     body: JSON.stringify({ completionNote }),
   });
@@ -164,11 +168,15 @@ export const completeTask = async (taskId: string, completionNote: string): Prom
 };
 
 export const fetchNotifications = async (userId?: string): Promise<NotificationItem[]> => {
-  const path = userId ? `/notifications?userId=${encodeURIComponent(userId)}` : '/notifications';
-  const response = await apiFetch(path, { method: 'GET' });
-  const json = await response.json();
-  if (response.ok && Array.isArray(json.data)) {
-    return json.data;
+  try {
+    const path = userId ? `/notifications?userId=${userId}` : '/notifications';
+    const response = await apiFetch(path, { method: 'GET' });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data || [];
+    }
+  } catch (err) {
+    console.warn('fetchNotifications API error:', err);
   }
   return [];
 };

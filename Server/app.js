@@ -7,7 +7,6 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const themeRoutes = require('./routes/themeRoutes');
 
 const app = express();
-
 // Middleware
 app.use(cors());
 app.use(express.json());
