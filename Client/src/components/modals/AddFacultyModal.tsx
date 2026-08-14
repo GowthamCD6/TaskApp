@@ -35,8 +35,8 @@ export const AddFacultyModal: React.FC<AddFacultyModalProps> = ({
   const { colors, isDark } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [department, setDepartment] = useState('Computer Science');
-  const [title, setTitle] = useState('Associate Professor');
+  const [department, setDepartment] = useState('');
+  const [title, setTitle] = useState('');
   const [regNo, setRegNo] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -67,7 +67,7 @@ export const AddFacultyModal: React.FC<AddFacultyModalProps> = ({
       name: name.trim(),
       email: email.trim().toLowerCase(),
       department: department.trim(),
-      title: title.trim() || 'Associate Professor',
+      title: title.trim() || 'Faculty Member',
       regNo: regNo.trim(),
       password: password.trim(),
     });
@@ -75,8 +75,8 @@ export const AddFacultyModal: React.FC<AddFacultyModalProps> = ({
     // Reset Form
     setName('');
     setEmail('');
-    setDepartment('Computer Science');
-    setTitle('Associate Professor');
+    setDepartment('');
+    setTitle('');
     setRegNo('');
     setPassword('');
     setShowPassword(false);

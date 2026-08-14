@@ -19,6 +19,7 @@ import { useTheme } from '../context/ThemeContext';
 // 1. Admin Navigator Component
 // ==========================================
 interface AdminNavigatorProps {
+  currentUser: User | null;
   allFaculty: User[];
   allTasks: Task[];
   selectedDate: string;
@@ -51,12 +52,14 @@ interface AdminNavigatorProps {
     password?: string;
   }) => void;
   onDeleteFaculty?: (id: string) => void;
+  onUpdateAdminProfile?: (updated: User) => void;
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   onLogout: () => void;
 }
 
 export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
+  currentUser,
   allFaculty,
   allTasks,
   selectedDate,
@@ -65,6 +68,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
   onAddFaculty,
   onUpdateFaculty,
   onDeleteFaculty,
+  onUpdateAdminProfile,
   activeTab,
   onTabChange,
   onLogout,
@@ -119,8 +123,10 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
       case 'profile':
         return (
           <AdminProfileScreen
+            currentUser={currentUser}
             allFaculty={allFaculty}
             allTasks={allTasks}
+            onUpdateUser={onUpdateAdminProfile}
             onLogout={onLogout}
           />
         );
@@ -444,6 +450,7 @@ export const AppNavigator: React.FC = () => {
       <View style={styles.contentBody}>
         {currentUser.role === 'admin' ? (
           <AdminNavigator
+            currentUser={currentUser}
             allFaculty={allFaculty}
             allTasks={tasks}
             selectedDate={selectedDate}
@@ -452,6 +459,7 @@ export const AppNavigator: React.FC = () => {
             onAddFaculty={handleAddFaculty}
             onUpdateFaculty={handleUpdateFaculty}
             onDeleteFaculty={handleDeleteFaculty}
+            onUpdateAdminProfile={(updated) => setCurrentUser(updated)}
             activeTab={activeAdminTab}
             onTabChange={setActiveAdminTab}
             onLogout={handleLogout}

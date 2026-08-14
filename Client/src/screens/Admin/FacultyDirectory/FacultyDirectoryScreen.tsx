@@ -109,15 +109,13 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
           const stats = getFacultyTaskStats(item.id);
-          const facultyRegNo = item.regNo || 'FAC-2026-101';
-          const initials = item.name
+          const facultyRegNo = item.regNo || '';
+          const initials = (item.name || 'Faculty')
             .split(' ')
             .map(n => n[0])
             .join('')
             .toUpperCase()
             .slice(0, 2);
-
-
 
           const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
@@ -145,9 +143,11 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                 <View style={styles.flex1}>
                   <View style={styles.nameDeptRow}>
                     <Text style={[styles.facultyName, { color: colors.text }]}>{item.name}</Text>
-                    <View style={[styles.deptPill, { backgroundColor: `${colors.primary}18` }]}>
-                      <Text style={[styles.deptPillText, { color: colors.primary }]}>{item.department}</Text>
-                    </View>
+                    {item.department ? (
+                      <View style={[styles.deptPill, { backgroundColor: `${colors.primary}18` }]}>
+                        <Text style={[styles.deptPillText, { color: colors.primary }]}>{item.department}</Text>
+                      </View>
+                    ) : null}
                   </View>
 
                   {/* Title / Role */}
@@ -157,17 +157,21 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
 
                   {/* Details Row: Reg No & Email */}
                   <View style={styles.detailsRow}>
-                    <View style={styles.detailChip}>
-                      <Icon name="user" size={10} color={colors.primary} />
-                      <Text style={[styles.regNoVal, { color: colors.primary }]}>{facultyRegNo}</Text>
-                    </View>
+                    {facultyRegNo ? (
+                      <View style={styles.detailChip}>
+                        <Icon name="user" size={10} color={colors.primary} />
+                        <Text style={[styles.regNoVal, { color: colors.primary }]}>{facultyRegNo}</Text>
+                      </View>
+                    ) : null}
 
-                    <View style={[styles.detailChip, { flex: 1 }]}>
-                      <Icon name="mail" size={10} color={colors.subText} />
-                      <Text style={[styles.emailText, { color: colors.subText }]} numberOfLines={1}>
-                        {item.email}
-                      </Text>
-                    </View>
+                    {item.email ? (
+                      <View style={[styles.detailChip, { flex: 1 }]}>
+                        <Icon name="mail" size={10} color={colors.subText} />
+                        <Text style={[styles.emailText, { color: colors.subText }]} numberOfLines={1}>
+                          {item.email}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
 
@@ -291,7 +295,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                 <View style={styles.flex1}>
                   <Text style={[styles.modalFacultyName, { color: colors.text }]}>{selectedFaculty.name}</Text>
                   <Text style={[styles.modalFacultyDept, { color: colors.subText }]}>
-                    Reg. No: {selectedFaculty.regNo || 'FAC-2026-101'} • {selectedFaculty.department}
+                    {selectedFaculty.regNo ? `Reg. No: ${selectedFaculty.regNo} • ` : ''}{selectedFaculty.department}
                   </Text>
                 </View>
                 <TouchableOpacity

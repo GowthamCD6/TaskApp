@@ -7,8 +7,8 @@ const formatTaskRow = (row) => ({
   description: row.description || '',
   assignedTo: row.assigned_to,
   assignedToName: row.assigned_to_name,
-  assignedBy: row.assigned_by || 'Dean James Wilson',
-  date: row.date ? new Date(row.date).toISOString().split('T')[0] : '',
+  assignedBy: row.assigned_by || 'Administrator',
+  date: row.date ? (typeof row.date === 'string' ? row.date.split('T')[0] : new Date(row.date).toISOString().split('T')[0]) : '',
   startTime: row.start_time || '09:00',
   endTime: row.end_time || '10:00',
   priority: row.priority || 'Medium',
@@ -88,7 +88,7 @@ const getTaskById = async (req, res) => {
 // POST /api/tasks (Admin creates & assigns task)
 const createTask = async (req, res) => {
   try {
-    const { title, description, assignedTo, date, startTime, endTime, priority } = req.body;
+    const { title, description, assignedTo, assignedBy, date, startTime, endTime, priority } = req.body;
 
     if (!title || !assignedTo || !date) {
       return res.status(400).json({
@@ -109,12 +109,12 @@ const createTask = async (req, res) => {
     const facultyName = users[0].name;
 
     const newTask = {
-      id: `task-${Date.now()}`,
-      title,
-      description: description || '',
+      id: `task-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      title: title.trim(),
+      description: description ? description.trim() : '',
       assignedTo,
       assignedToName: facultyName,
-      assignedBy: 'Dean James Wilson',
+      assignedBy: assignedBy ? assignedBy.trim() : 'Administrator',
       date,
       startTime: startTime || '09:00',
       endTime: endTime || '10:00',

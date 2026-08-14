@@ -145,12 +145,14 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
                 <Text style={[styles.heroActionText, { color: colors.subText }]}>{currentFaculty.email}</Text>
               </TouchableOpacity>
 
-              <View style={[styles.heroActionChip, { backgroundColor: colors.surface }]}>
-                <Icon name="user" size={12} color={colors.secondary} />
-                <Text style={[styles.heroActionText, { color: colors.secondary, fontWeight: '700' }]}>
-                  {currentFaculty.regNo || 'FAC-2026-101'}
-                </Text>
-              </View>
+              {currentFaculty.regNo ? (
+                <View style={[styles.heroActionChip, { backgroundColor: colors.surface }]}>
+                  <Icon name="user" size={12} color={colors.secondary} />
+                  <Text style={[styles.heroActionText, { color: colors.secondary, fontWeight: '700' }]}>
+                    {currentFaculty.regNo}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -204,7 +206,7 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
 
           <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
             <Text style={[styles.infoLabel, { color: colors.subText }]}>Reg. No.</Text>
-            <Text style={[styles.infoValText, { color: colors.secondary }]}>{currentFaculty.regNo || 'FAC-2026-101'}</Text>
+            <Text style={[styles.infoValText, { color: colors.secondary }]}>{currentFaculty.regNo || 'N/A'}</Text>
           </View>
 
           <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>

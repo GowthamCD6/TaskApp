@@ -263,7 +263,7 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
                     <View style={{ flex: 1, marginLeft: 10 }}>
                       <Text style={[styles.facultyItemName, { color: colors.text }]}>{faculty.name}</Text>
                       <Text style={[styles.facultyItemDept, { color: colors.subText }]}>
-                        {faculty.regNo || 'FAC-2026-101'} • {faculty.department}
+                        {faculty.regNo ? `${faculty.regNo} • ` : ''}{faculty.department}
                       </Text>
                     </View>
 

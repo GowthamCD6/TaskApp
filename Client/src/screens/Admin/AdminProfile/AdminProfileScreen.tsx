@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Alert,
   Modal,
   TextInput,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { User, Task } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
@@ -15,50 +17,66 @@ import { Icon } from '../../../components/common/Icon';
 import { updateUser } from '../../../services/api';
 
 interface AdminProfileScreenProps {
+  currentUser: User | null;
   allFaculty: User[];
   allTasks: Task[];
+  onUpdateUser?: (updated: User) => void;
   onLogout?: () => void;
 }
 
 export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
+  currentUser,
   allFaculty,
   allTasks,
+  onUpdateUser,
   onLogout,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
 
-  const handleToggleThemeMode = async () => {
-    const nextTheme = isDark ? 'light' : 'dark';
-    toggleTheme();
-    try {
-      await updateUser(adminUser.id, { themeMode: nextTheme });
-    } catch (err) {
-      console.warn('Failed to persist theme to backend:', err);
+  // State for administrator details synced with currentUser
+  const [adminUser, setAdminUser] = useState<User>(
+    currentUser || {
+      id: 'admin-1',
+      name: 'Administrator',
+      email: 'admin@university.edu',
+      regNo: 'ADMIN',
+      role: 'admin',
+      department: 'Administration',
+      avatar: '',
+      title: 'Academic Administrator',
+      phone: '',
+      officeHours: '',
     }
-  };
+  );
 
-  // State for administrator details
-  const [adminUser, setAdminUser] = useState<User>({
-    id: 'admin-1',
-    name: 'Dean James Wilson',
-    email: 'admin.dean@university.edu',
-    regNo: 'ADM-2026-001',
-    role: 'admin',
-    department: 'Academic Administration',
-    avatar: '',
-    title: 'Chief Academic Officer',
-    phone: '+1 (555) 234-5678',
-    officeHours: 'Mon - Fri, 09:00 AM - 05:00 PM',
-  });
+  useEffect(() => {
+    if (currentUser) {
+      setAdminUser(currentUser);
+    }
+  }, [currentUser]);
 
   // Modal State for Editing Profile Details
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editName, setEditName] = useState(adminUser.name);
-  const [editTitle, setEditTitle] = useState(adminUser.title);
+  const [editName, setEditName] = useState(adminUser.name || '');
+  const [editTitle, setEditTitle] = useState(adminUser.title || '');
+  const [editDepartment, setEditDepartment] = useState(adminUser.department || '');
   const [editPhone, setEditPhone] = useState(adminUser.phone || '');
   const [editHours, setEditHours] = useState(adminUser.officeHours || '');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const initials = adminUser.name
+  const handleToggleThemeMode = async () => {
+    const nextTheme = isDark ? 'light' : 'dark';
+    toggleTheme();
+    if (adminUser.id) {
+      try {
+        await updateUser(adminUser.id, { themeMode: nextTheme });
+      } catch (err) {
+        console.warn('Failed to persist theme to backend:', err);
+      }
+    }
+  };
+
+  const initials = (adminUser.name || 'Admin')
     .split(' ')
     .map(n => n[0])
     .join('')
@@ -70,26 +88,40 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
   const pendingTasks = totalTasks - completedTasks;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!editName.trim()) {
       Alert.alert('Required Field', 'Please enter your full name.');
       return;
     }
-    setAdminUser(prev => ({
-      ...prev,
-      name: editName.trim(),
-      title: editTitle.trim() || 'Chief Academic Officer',
-      phone: editPhone.trim(),
-      officeHours: editHours.trim(),
-    }));
-    setEditModalVisible(false);
-    Alert.alert('Profile Updated', 'Administrator profile details updated successfully.');
+
+    setIsSaving(true);
+    try {
+      const payload: Partial<User> = {
+        name: editName.trim(),
+        title: editTitle.trim(),
+        department: editDepartment.trim(),
+        phone: editPhone.trim(),
+        officeHours: editHours.trim(),
+      };
+
+      const updated = await updateUser(adminUser.id, payload);
+      setAdminUser(updated);
+      if (onUpdateUser) {
+        onUpdateUser(updated);
+      }
+      setEditModalVisible(false);
+      Alert.alert('Profile Updated', 'Administrator profile details updated successfully.');
+    } catch (err: any) {
+      Alert.alert('Update Failed', err.message || 'Unable to update administrator profile.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleConfirmLogout = () => {
     Alert.alert(
       'Logout Administrator Session',
-      'Are you sure you want to sign out of the Dean Administrative Portal?',
+      'Are you sure you want to sign out of the Administrator Portal?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -113,8 +145,9 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
         <TouchableOpacity
           style={[styles.editProfileBtn, { backgroundColor: colors.primary }]}
           onPress={() => {
-            setEditName(adminUser.name);
-            setEditTitle(adminUser.title);
+            setEditName(adminUser.name || '');
+            setEditTitle(adminUser.title || '');
+            setEditDepartment(adminUser.department || '');
             setEditPhone(adminUser.phone || '');
             setEditHours(adminUser.officeHours || '');
             setEditModalVisible(true);
@@ -145,9 +178,13 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
           <View style={styles.heroBody}>
             {/* Avatar Circle */}
             <View style={styles.avatarWrapper}>
-              <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
-                <Text style={styles.avatarInitials}>{initials}</Text>
-              </View>
+              {adminUser.avatar ? (
+                <Image source={{ uri: adminUser.avatar }} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.avatarInitials}>{initials}</Text>
+                </View>
+              )}
               <View style={[styles.statusIndicatorDot, { borderColor: colors.card }]} />
             </View>
 
@@ -155,31 +192,39 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
             <Text style={[styles.userNameText, { color: colors.text }]}>{adminUser.name}</Text>
             
             <View style={styles.titleBadgeRow}>
-              <View style={[styles.titleBadge, { backgroundColor: `${colors.primary}18` }]}>
-                <Icon name="academic" size={12} color={colors.primary} />
-                <Text style={[styles.titleBadgeText, { color: colors.primary }]}>{adminUser.title}</Text>
-              </View>
+              {adminUser.title ? (
+                <View style={[styles.titleBadge, { backgroundColor: `${colors.primary}18` }]}>
+                  <Icon name="academic" size={12} color={colors.primary} />
+                  <Text style={[styles.titleBadgeText, { color: colors.primary }]}>{adminUser.title}</Text>
+                </View>
+              ) : null}
               <View style={[styles.verifiedBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
                 <Icon name="check" size={10} color="#10B981" />
                 <Text style={styles.verifiedText}>Verified Administrator</Text>
               </View>
             </View>
 
-            <Text style={[styles.userDeptText, { color: colors.subText }]}>{adminUser.department}</Text>
+            {adminUser.department ? (
+              <Text style={[styles.userDeptText, { color: colors.subText }]}>{adminUser.department}</Text>
+            ) : null}
 
             {/* Details Row Chips */}
             <View style={styles.heroActionRow}>
-              <View style={[styles.heroActionChip, { backgroundColor: colors.surface }]}>
-                <Icon name="mail" size={12} color={colors.subText} />
-                <Text style={[styles.heroActionText, { color: colors.subText }]}>{adminUser.email}</Text>
-              </View>
+              {adminUser.email ? (
+                <View style={[styles.heroActionChip, { backgroundColor: colors.surface }]}>
+                  <Icon name="mail" size={12} color={colors.subText} />
+                  <Text style={[styles.heroActionText, { color: colors.subText }]}>{adminUser.email}</Text>
+                </View>
+              ) : null}
 
-              <View style={[styles.heroActionChip, { backgroundColor: colors.surface }]}>
-                <Icon name="shield" size={12} color={colors.primary} />
-                <Text style={[styles.heroActionText, { color: colors.primary, fontWeight: '700' }]}>
-                  {adminUser.regNo}
-                </Text>
-              </View>
+              {adminUser.regNo ? (
+                <View style={[styles.heroActionChip, { backgroundColor: colors.surface }]}>
+                  <Icon name="shield" size={12} color={colors.primary} />
+                  <Text style={[styles.heroActionText, { color: colors.primary, fontWeight: '700' }]}>
+                    {adminUser.regNo}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
@@ -217,22 +262,22 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
           <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
             <Text style={[styles.infoLabel, { color: colors.subText }]}>Official Designation</Text>
-            <Text style={[styles.infoValText, { color: colors.primary }]}>{adminUser.title}</Text>
+            <Text style={[styles.infoValText, { color: colors.primary }]}>{adminUser.title || 'Administrator'}</Text>
           </View>
 
           <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
             <Text style={[styles.infoLabel, { color: colors.subText }]}>Administrative Dept</Text>
-            <Text style={[styles.infoValText, { color: colors.text }]}>{adminUser.department}</Text>
+            <Text style={[styles.infoValText, { color: colors.text }]}>{adminUser.department || 'Administration'}</Text>
           </View>
 
           <View style={[styles.infoRow, { borderBottomColor: colors.cardBorder }]}>
             <Text style={[styles.infoLabel, { color: colors.subText }]}>Office Phone</Text>
-            <Text style={[styles.infoValText, { color: colors.text }]}>{adminUser.phone}</Text>
+            <Text style={[styles.infoValText, { color: colors.text }]}>{adminUser.phone || 'Not Specified'}</Text>
           </View>
 
           <View style={styles.infoRowLast}>
             <Text style={[styles.infoLabel, { color: colors.subText }]}>Office Hours</Text>
-            <Text style={[styles.infoValText, { color: colors.text }]}>{adminUser.officeHours}</Text>
+            <Text style={[styles.infoValText, { color: colors.text }]}>{adminUser.officeHours || 'Not Specified'}</Text>
           </View>
         </View>
 
@@ -346,6 +391,17 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
                 style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }]}
                 value={editName}
                 onChangeText={setEditName}
+                placeholder="Enter full name"
+                placeholderTextColor={colors.subText}
+              />
+
+              <Text style={[styles.inputLabel, { color: colors.subText }]}>Department</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }]}
+                value={editDepartment}
+                onChangeText={setEditDepartment}
+                placeholder="Enter department"
+                placeholderTextColor={colors.subText}
               />
 
               <Text style={[styles.inputLabel, { color: colors.subText }]}>Official Title / Designation</Text>
@@ -353,6 +409,8 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
                 style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }]}
                 value={editTitle}
                 onChangeText={setEditTitle}
+                placeholder="e.g. Dean of Academics"
+                placeholderTextColor={colors.subText}
               />
 
               <Text style={[styles.inputLabel, { color: colors.subText }]}>Office Contact Phone</Text>
@@ -361,6 +419,8 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
                 value={editPhone}
                 onChangeText={setEditPhone}
                 keyboardType="phone-pad"
+                placeholder="e.g. +91 9876543210"
+                placeholderTextColor={colors.subText}
               />
 
               <Text style={[styles.inputLabel, { color: colors.subText }]}>Office Hours</Text>
@@ -368,6 +428,8 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
                 style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }]}
                 value={editHours}
                 onChangeText={setEditHours}
+                placeholder="e.g. Mon - Fri, 09:00 AM - 05:00 PM"
+                placeholderTextColor={colors.subText}
               />
             </ScrollView>
 
@@ -382,8 +444,13 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
               <TouchableOpacity
                 style={[styles.saveModalBtn, { backgroundColor: colors.primary }]}
                 onPress={handleSaveProfile}
+                disabled={isSaving}
               >
-                <Text style={styles.saveModalBtnText}>Save Changes</Text>
+                {isSaving ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.saveModalBtnText}>Save Changes</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -457,6 +524,13 @@ const styles = StyleSheet.create({
     borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  avatarImage: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     borderWidth: 3,
     borderColor: '#FFFFFF',
   },

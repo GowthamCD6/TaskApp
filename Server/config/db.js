@@ -133,7 +133,7 @@ sqliteDb.serialize(() => {
   });
 });
 
-let useLocalSQLite = false;
+let useLocalSQLite = process.env.USE_SQLITE === 'true';
 
 const mysqlPool = mysql.createPool({
   host: process.env.DB_HOST || 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
@@ -144,14 +144,26 @@ const mysqlPool = mysql.createPool({
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   waitForConnections: true,
   connectionLimit: 5,
-  connectTimeout: 5000,
+  connectTimeout: 2000,
 });
+
+// Probe MySQL connection on startup
+if (!useLocalSQLite) {
+  mysqlPool.getConnection()
+    .then((conn) => {
+      console.log('✅ Connected to TiDB / MySQL Cloud Database.');
+      conn.release();
+    })
+    .catch((err) => {
+      console.warn('⚠️ TiDB / MySQL connection unreachable (' + err.message + '). Using local SQLite database.');
+      useLocalSQLite = true;
+    });
+}
 
 // Helper to execute pure SQL queries on SQLite table engine
 const querySQLite = (sql, params = []) => {
   return new Promise((resolve, reject) => {
     let sanitizedSQL = sql.trim();
-    // Normalize MySQL functions for SQLite (COALESCE, LOWER, etc.)
     const upperSQL = sanitizedSQL.toUpperCase();
 
     if (upperSQL.startsWith('SELECT')) {
@@ -183,7 +195,7 @@ const pool = {
       return await mysqlPool.query(sql, params);
     } catch (err) {
       if (!useLocalSQLite) {
-        console.warn('⚠️ MySQL connection unavailable. Switching to pure SQLite SQL database table engine.');
+        console.warn('⚠️ MySQL connection unavailable. Switching to pure SQLite database engine.');
         useLocalSQLite = true;
       }
       return querySQLite(sql, params);
@@ -212,3 +224,4 @@ module.exports = {
   pool,
   mysqlPool,
 };
+

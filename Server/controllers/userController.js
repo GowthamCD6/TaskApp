@@ -6,15 +6,15 @@ const formatUserRow = (row) => {
   return {
     id: row.id,
     googleId: row.google_id || null,
-    regNo: row.reg_no || (row.role === 'admin' ? 'ADM-2026-001' : 'FAC-2026-101'),
-    name: row.name,
-    email: row.email,
-    role: row.role,
-    department: row.department || 'Academic Department',
-    title: row.title || 'Faculty Member',
-    avatar: row.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-    phone: row.phone || '+1 (555) 123-4567',
-    officeHours: row.office_hours || 'Mon - Fri, 09:00 AM - 05:00 PM',
+    regNo: row.reg_no || '',
+    name: row.name || '',
+    email: row.email || '',
+    role: row.role || 'faculty',
+    department: row.department || '',
+    title: row.title || '',
+    avatar: row.avatar || '',
+    phone: row.phone || '',
+    officeHours: row.office_hours || '',
     themeModeId: modeId,
     themeMode: modeId === 2 ? 'dark' : 'light',
     createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
@@ -101,19 +101,18 @@ const createUser = async (req, res) => {
       });
     }
 
-    const newRegNo = regNo ? regNo.trim() : `FAC-2026-${Math.floor(100 + Math.random() * 900)}`;
     const newUser = {
-      id: `fac-${Date.now()}`,
-      reg_no: newRegNo,
+      id: `fac-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      reg_no: regNo ? regNo.trim() : '',
       password: password ? password.trim() : '123456',
       name: name.trim(),
       email: email.trim().toLowerCase(),
       role: 'faculty',
       department: department.trim(),
-      title: title ? title.trim() : 'Assistant Professor',
-      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      phone: phone || '+1 (555) 123-4567',
-      office_hours: officeHours || 'Mon - Fri, 09:00 AM - 05:00 PM',
+      title: title ? title.trim() : '',
+      avatar: avatar ? avatar.trim() : '',
+      phone: phone ? phone.trim() : '',
+      office_hours: officeHours ? officeHours.trim() : '',
     };
 
     await pool.query(
