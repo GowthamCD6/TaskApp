@@ -1,39 +1,139 @@
 const mysql = require('mysql2/promise');
-const fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
 const dataDir = path.join(__dirname, '..', 'data');
 if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: recursive });
+  fs.mkdirSync(dataDir, { recursive: true });
 }
 
-const usersFile = path.join(dataDir, 'users.json');
-const tasksFile = path.join(dataDir, 'tasks.json');
-const notificationsFile = path.join(dataDir, 'notifications.json');
+// Embedded SQLite Database File
+const dbPath = path.join(dataDir, 'taskapp.sqlite');
+const sqliteDb = new sqlite3.Database(dbPath);
 
-const readJSON = (filePath, defaultVal = []) => {
-  try {
-    if (!fs.existsSync(filePath)) return defaultVal;
-    const content = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(content);
-  } catch (err) {
-    console.error(`Error reading ${filePath}:`, err);
-    return defaultVal;
-  }
-};
+// Initialize SQLite SQL Tables
+sqliteDb.serialize(() => {
+  // 1. Theme Modes & Themes Table
+  sqliteDb.run(`
+    CREATE TABLE IF NOT EXISTS theme_modes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL
+    );
+  `);
+  sqliteDb.run(`INSERT OR IGNORE INTO theme_modes (id, name) VALUES (1, 'light'), (2, 'dark');`);
 
-const writeJSON = (filePath, data) => {
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-  } catch (err) {
-    console.error(`Error writing ${filePath}:`, err);
-  }
-};
+  sqliteDb.run(`
+    CREATE TABLE IF NOT EXISTS themes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL
+    );
+  `);
+  sqliteDb.run(`INSERT OR IGNORE INTO themes (id, name) VALUES (1, 'light'), (2, 'dark');`);
 
-let useLocalFallback = false;
+  // 2. Users Table
+  sqliteDb.run(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      google_id TEXT UNIQUE,
+      reg_no TEXT UNIQUE,
+      password TEXT DEFAULT '123456',
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      role TEXT DEFAULT 'faculty',
+      department TEXT,
+      title TEXT,
+      avatar TEXT,
+      phone TEXT,
+      office_hours TEXT,
+      theme_mode_id INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // 3. Tasks Table
+  sqliteDb.run(`
+    CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      assigned_to TEXT NOT NULL,
+      assigned_to_name TEXT,
+      assigned_by TEXT NOT NULL,
+      date TEXT NOT NULL,
+      start_time TEXT NOT NULL,
+      end_time TEXT NOT NULL,
+      priority TEXT DEFAULT 'Medium',
+      status TEXT DEFAULT 'pending',
+      completion_note TEXT,
+      completed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // 4. Notifications Table
+  sqliteDb.run(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      type TEXT DEFAULT 'broadcast',
+      is_read INTEGER DEFAULT 0,
+      related_task_id TEXT,
+      sender_name TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Seed Initial SQL Database Users if empty
+  sqliteDb.get('SELECT COUNT(*) as count FROM users', (err, row) => {
+    if (!err && row && row.count === 0) {
+      const seedUsers = [
+        ['admin-1', '109197831663137140571', '242IT163', '123456', 'Gowtham', 'gowthamcd.it24@bitsathy.ac.in', 'admin', 'Information Technology', 'System Administrator', 'https://lh3.googleusercontent.com/a/ACg8ocJX6QioVD5BsdmqJQ9Q8DtHn5GBo-gxaXsx_j2yWcB0YNhDD-4', '+91 9876543210', 'Mon - Fri, 09:00 AM - 05:00 PM', 1],
+        ['fac-1', null, 'FAC-2026-101', '123456', 'Dr. Sarah Smith', 'sarah.smith@university.edu', 'faculty', 'Computer Science', 'Associate Professor', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', '+1 (555) 123-4567', 'Mon - Thu, 10:00 AM - 02:00 PM', 1],
+        ['fac-2', null, 'FAC-2026-102', '123456', 'Prof. Alan Turing', 'alan.turing@university.edu', 'faculty', 'Artificial Intelligence', 'Department Head', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', '+1 (555) 987-6543', 'Tue - Fri, 11:00 AM - 03:00 PM', 1],
+        ['fac-3', null, 'FAC-2026-103', '123456', 'Dr. Emily Watson', 'emily.watson@university.edu', 'faculty', 'Software Engineering', 'Assistant Professor', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', '+1 (555) 456-7890', 'Mon - Wed, 01:00 PM - 04:00 PM', 1],
+        ['fac-4', null, 'FAC-2026-104', '123456', 'Prof. Robert Miller', 'robert.miller@university.edu', 'faculty', 'Cyber Security', 'Senior Lecturer', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', '+1 (555) 321-7654', 'Wed - Fri, 09:00 AM - 01:00 PM', 1]
+      ];
+      const stmt = sqliteDb.prepare(`
+        INSERT INTO users (id, google_id, reg_no, password, name, email, role, department, title, avatar, phone, office_hours, theme_mode_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const u of seedUsers) {
+        stmt.run(u);
+      }
+      stmt.finalize();
+      console.log('✅ Seeded initial database records into SQLite users table.');
+    }
+  });
+
+  // Seed Initial SQL Database Notifications if empty
+  sqliteDb.get('SELECT COUNT(*) as count FROM notifications', (err, row) => {
+    if (!err && row && row.count === 0) {
+      const seedNotifications = [
+        ['notif-1', 'New Task Assignment', 'You have been assigned to prepare CS301 Curriculum Review.', 'task_assigned', 0, null, 'Gowtham'],
+        ['notif-2', 'Academic Review Meeting', 'Departmental Review Meeting scheduled for tomorrow at 10:00 AM.', 'broadcast', 0, null, 'Academic Office'],
+        ['notif-3', 'Task Status Update', 'Dr. Sarah Smith completed task CS301 Syllabus Update.', 'urgent', 1, null, 'System']
+      ];
+      const stmt = sqliteDb.prepare(`
+        INSERT INTO notifications (id, title, message, type, is_read, related_task_id, sender_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      for (const n of seedNotifications) {
+        stmt.run(n);
+      }
+      stmt.finalize();
+      console.log('✅ Seeded initial notifications into SQLite database table.');
+    }
+  });
+});
+
+let useLocalSQLite = false;
 
 const mysqlPool = mysql.createPool({
   host: process.env.DB_HOST || 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
@@ -47,283 +147,68 @@ const mysqlPool = mysql.createPool({
   connectTimeout: 5000,
 });
 
-const executeFallbackQuery = async (sql, params = []) => {
-  const sqlTrimmed = sql.trim();
-  const upperSQL = sqlTrimmed.toUpperCase();
+// Helper to execute pure SQL queries on SQLite table engine
+const querySQLite = (sql, params = []) => {
+  return new Promise((resolve, reject) => {
+    let sanitizedSQL = sql.trim();
+    // Normalize MySQL functions for SQLite (COALESCE, LOWER, etc.)
+    const upperSQL = sanitizedSQL.toUpperCase();
 
-  // 1. Users Queries
-  if (upperSQL.includes('FROM USERS') || upperSQL.includes('INTO USERS') || upperSQL.includes('UPDATE USERS')) {
-    let users = readJSON(usersFile, []);
-
-    if (upperSQL.startsWith('SELECT COUNT(*)')) {
-      return [[{ count: users.length }], []];
-    }
-
-    if (upperSQL.startsWith('SELECT * FROM USERS WHERE ID = ?')) {
-      const found = users.filter(u => u.id === params[0]);
-      return [found, []];
-    }
-
-    if (upperSQL.startsWith('SELECT * FROM USERS WHERE LOWER(REG_NO) = LOWER(?)')) {
-      const found = users.filter(u => u.reg_no && u.reg_no.toLowerCase() === String(params[0]).toLowerCase());
-      return [found, []];
-    }
-
-    if (upperSQL.startsWith('SELECT * FROM USERS WHERE LOWER(EMAIL) = LOWER(?)')) {
-      const found = users.filter(u => u.email && u.email.toLowerCase() === String(params[0]).toLowerCase());
-      return [found, []];
-    }
-
-    if (upperSQL.includes('LOWER(ROLE) = LOWER(?)')) {
-      const roleVal = params[0].toLowerCase();
-      let filtered = users.filter(u => u.role && u.role.toLowerCase() === roleVal);
-      if (upperSQL.includes('LIMIT 1')) filtered = filtered.slice(0, 1);
-      return [filtered, []];
-    }
-
-    if (upperSQL.includes('GOOGLE_ID = ? OR LOWER(EMAIL) = LOWER(?)')) {
-      const googleId = params[0];
-      const email = String(params[1]).toLowerCase();
-      const found = users.filter(u => (u.google_id && u.google_id === googleId) || (u.email && u.email.toLowerCase() === email));
-      return [found, []];
-    }
-
-    if (upperSQL.startsWith('SELECT * FROM USERS')) {
-      return [users, []];
-    }
-
-    if (upperSQL.startsWith('INSERT INTO USERS')) {
-      const newUser = {
-        id: params[0],
-        google_id: params[1] || null,
-        reg_no: params[2] || `FAC-2026-${Math.floor(100 + Math.random() * 900)}`,
-        password: params[3] || '123456',
-        name: params[4],
-        email: params[5],
-        role: params[6] || 'faculty',
-        department: params[7] || 'Department',
-        title: params[8] || 'Faculty Member',
-        avatar: params[9] || '',
-        phone: params[10] || '',
-        office_hours: params[11] || '',
-        created_at: new Date().toISOString(),
-      };
-      users.push(newUser);
-      writeJSON(usersFile, users);
-      return [{ affectedRows: 1, insertId: newUser.id }, []];
-    }
-
-    if (upperSQL.startsWith('UPDATE USERS SET NAME = ?')) {
-      const id = params[8];
-      const idx = users.findIndex(u => u.id === id);
-      if (idx !== -1) {
-        users[idx] = {
-          ...users[idx],
-          name: params[0],
-          email: params[1],
-          department: params[2],
-          title: params[3],
-          avatar: params[4],
-          phone: params[5],
-          office_hours: params[6],
-          reg_no: params[7],
-        };
-        writeJSON(usersFile, users);
-      }
-      return [{ affectedRows: idx !== -1 ? 1 : 0 }, []];
-    }
-
-    if (upperSQL.startsWith('UPDATE USERS SET GOOGLE_ID = ?')) {
-      const [gId, pic, id] = params;
-      const idx = users.findIndex(u => u.id === id);
-      if (idx !== -1) {
-        users[idx].google_id = gId;
-        if (pic) users[idx].avatar = pic;
-        writeJSON(usersFile, users);
-      }
-      return [{ affectedRows: 1 }, []];
-    }
-  }
-
-  // 2. Tasks Queries
-  if (upperSQL.includes('FROM TASKS') || upperSQL.includes('INTO TASKS') || upperSQL.includes('UPDATE TASKS') || upperSQL.includes('DELETE FROM TASKS')) {
-    let tasks = readJSON(tasksFile, []);
-
-    if (upperSQL.startsWith('SELECT COUNT(*)')) {
-      return [[{ count: tasks.length }], []];
-    }
-
-    if (upperSQL.startsWith('SELECT * FROM TASKS WHERE ID = ?')) {
-      const found = tasks.filter(t => t.id === params[0]);
-      return [found, []];
-    }
-
-    if (upperSQL.startsWith('SELECT * FROM TASKS')) {
-      let filtered = [...tasks];
-      let pIdx = 0;
-      if (upperSQL.includes('ASSIGNED_TO = ?')) {
-        filtered = filtered.filter(t => t.assigned_to === params[pIdx] || t.assignedTo === params[pIdx]);
-        pIdx++;
-      }
-      if (upperSQL.includes('DATE = ?')) {
-        filtered = filtered.filter(t => t.date === params[pIdx]);
-        pIdx++;
-      }
-      if (upperSQL.includes('STATUS = ?')) {
-        filtered = filtered.filter(t => t.status === params[pIdx]);
-        pIdx++;
-      }
-      return [filtered, []];
-    }
-
-    if (upperSQL.startsWith('INSERT INTO TASKS')) {
-      const newTask = {
-        id: params[0],
-        title: params[1],
-        description: params[2],
-        assigned_to: params[3],
-        assigned_to_name: params[4],
-        assigned_by: params[5],
-        date: params[6],
-        start_time: params[7],
-        end_time: params[8],
-        priority: params[9],
-        status: params[10] || 'pending',
-        completion_note: '',
-        completed_at: null,
-        created_at: new Date().toISOString(),
-      };
-      tasks.unshift(newTask);
-      writeJSON(tasksFile, tasks);
-      return [{ affectedRows: 1, insertId: newTask.id }, []];
-    }
-
-    if (upperSQL.startsWith('UPDATE TASKS SET STATUS = ?')) {
-      const [status, note, completedAt, id] = params;
-      const idx = tasks.findIndex(t => t.id === id);
-      if (idx !== -1) {
-        tasks[idx].status = status;
-        tasks[idx].completion_note = note;
-        tasks[idx].completed_at = completedAt;
-        writeJSON(tasksFile, tasks);
-      }
-      return [{ affectedRows: idx !== -1 ? 1 : 0 }, []];
-    }
-
-    if (upperSQL.startsWith('DELETE FROM TASKS WHERE ID = ?')) {
-      const id = params[0];
-      const initialLen = tasks.length;
-      tasks = tasks.filter(t => t.id !== id);
-      writeJSON(tasksFile, tasks);
-      return [{ affectedRows: initialLen - tasks.length }, []];
-    }
-  }
-
-  // 3. Notifications Queries
-  if (upperSQL.includes('FROM NOTIFICATIONS') || upperSQL.includes('INTO NOTIFICATIONS') || upperSQL.includes('UPDATE NOTIFICATIONS')) {
-    let notifications = readJSON(notificationsFile, []);
-
-    if (upperSQL.startsWith('SELECT COUNT(*)')) {
-      return [[{ count: notifications.length }], []];
-    }
-
-    if (upperSQL.startsWith('SELECT * FROM NOTIFICATIONS')) {
-      let filtered = [...notifications];
-      if (upperSQL.includes('USER_ID = ?') && params.length > 0) {
-        filtered = filtered.filter(n => n.user_id === params[0] || n.userId === params[0]);
-      }
-      return [filtered, []];
-    }
-
-    if (upperSQL.startsWith('UPDATE NOTIFICATIONS SET IS_READ = TRUE WHERE ID = ?')) {
-      const id = params[0];
-      const idx = notifications.findIndex(n => n.id === id);
-      if (idx !== -1) {
-        notifications[idx].is_read = true;
-        writeJSON(notificationsFile, notifications);
-      }
-      return [{ affectedRows: idx !== -1 ? 1 : 0 }, []];
-    }
-
-    if (upperSQL.startsWith('UPDATE NOTIFICATIONS SET IS_READ = TRUE WHERE USER_ID = ?')) {
-      const uId = params[0];
-      notifications.forEach(n => {
-        if (n.user_id === uId || n.userId === uId) n.is_read = true;
+    if (upperSQL.startsWith('SELECT')) {
+      sqliteDb.all(sanitizedSQL, params, (err, rows) => {
+        if (err) {
+          console.error('SQLite SELECT Error:', err.message, 'SQL:', sanitizedSQL);
+          return reject(err);
+        }
+        resolve([rows, []]);
       });
-      writeJSON(notificationsFile, notifications);
-      return [{ affectedRows: 1 }, []];
+    } else {
+      sqliteDb.run(sanitizedSQL, params, function (err) {
+        if (err) {
+          console.error('SQLite Statement Error:', err.message, 'SQL:', sanitizedSQL);
+          return reject(err);
+        }
+        resolve([{ affectedRows: this.changes, insertId: this.lastID }, []]);
+      });
     }
-
-    if (upperSQL.startsWith('UPDATE NOTIFICATIONS SET IS_READ = TRUE')) {
-      notifications.forEach(n => (n.is_read = true));
-      writeJSON(notificationsFile, notifications);
-      return [{ affectedRows: notifications.length }, []];
-    }
-
-    if (upperSQL.startsWith('INSERT INTO NOTIFICATIONS')) {
-      const newNotif = {
-        id: params[0],
-        user_id: params[1],
-        title: params[2],
-        message: params[3],
-        type: params[4],
-        timestamp: params[5],
-        is_read: Boolean(params[6]),
-        sender_name: params[7],
-        created_at: new Date().toISOString(),
-      };
-      notifications.unshift(newNotif);
-      writeJSON(notificationsFile, notifications);
-      return [{ affectedRows: 1 }, []];
-    }
-  }
-
-  return [[], []];
+  });
 };
 
 const pool = {
   query: async (sql, params = []) => {
-    if (!useLocalFallback) {
-      try {
-        const result = await mysqlPool.query(sql, params);
-        return result;
-      } catch (err) {
-        console.warn('⚠️ Remote MySQL/TiDB database error, using JSON file storage fallback:', err.message);
-        useLocalFallback = true;
-      }
+    if (useLocalSQLite) {
+      return querySQLite(sql, params);
     }
-    return executeFallbackQuery(sql, params);
+    try {
+      return await mysqlPool.query(sql, params);
+    } catch (err) {
+      if (!useLocalSQLite) {
+        console.warn('⚠️ MySQL connection unavailable. Switching to pure SQLite SQL database table engine.');
+        useLocalSQLite = true;
+      }
+      return querySQLite(sql, params);
+    }
   },
   getConnection: async () => {
-    if (!useLocalFallback) {
-      try {
-        const conn = await mysqlPool.getConnection();
-        return conn;
-      } catch (err) {
-        useLocalFallback = true;
-      }
+    if (useLocalSQLite) {
+      return {
+        query: (sql, params) => querySQLite(sql, params),
+        release: () => {},
+      };
     }
-    return {
-      query: (sql, params) => executeFallbackQuery(sql, params),
-      release: () => {},
-    };
+    try {
+      return await mysqlPool.getConnection();
+    } catch (err) {
+      useLocalSQLite = true;
+      return {
+        query: (sql, params) => querySQLite(sql, params),
+        release: () => {},
+      };
+    }
   },
-};
-
-const testConnection = async () => {
-  try {
-    const conn = await mysqlPool.getConnection();
-    console.log('⚡ Connected successfully to TiDB/MySQL Database');
-    conn.release();
-    return true;
-  } catch (error) {
-    console.log('ℹ️ Running backend server with persistent JSON file database fallback');
-    useLocalFallback = true;
-    return true;
-  }
 };
 
 module.exports = {
   pool,
-  testConnection,
+  mysqlPool,
 };

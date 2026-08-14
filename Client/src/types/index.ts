@@ -13,6 +13,8 @@ export interface User {
   password?: string;
   phone?: string;
   officeHours?: string;
+  themeMode?: 'light' | 'dark';
+  themeModeId?: number;
 }
 
 export type Priority = 'High' | 'Medium' | 'Low';

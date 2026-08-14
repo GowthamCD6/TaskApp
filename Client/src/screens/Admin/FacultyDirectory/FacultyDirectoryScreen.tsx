@@ -34,6 +34,7 @@ interface FacultyDirectoryScreenProps {
     email: string;
     department: string;
     regNo: string;
+    title?: string;
     password?: string;
   }) => void;
   onDeleteFaculty?: (id: string) => void;
@@ -71,6 +72,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
     email: string;
     department: string;
     regNo: string;
+    title?: string;
     password?: string;
   }) => {
     if (onUpdateFaculty) {

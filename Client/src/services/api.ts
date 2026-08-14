@@ -1,12 +1,6 @@
 import { Platform } from 'react-native';
 import { User, Task, NotificationItem } from '../types';
-
-// Dynamic multi-host backend connection for Wi-Fi IP (10.150.255.47), Android Emulator (10.0.2.2), & Localhost
-const API_ENDPOINTS = [
-  'http://10.150.255.47:5000/api',
-  'http://10.0.2.2:5000/api',
-  'http://localhost:5000/api',
-];
+import { API_ENDPOINTS, API_TIMEOUT_MS } from '../config/env';
 
 const apiFetch = async (path: string, options: RequestInit = {}): Promise<Response> => {
   let lastError: any = null;
@@ -16,7 +10,7 @@ const apiFetch = async (path: string, options: RequestInit = {}): Promise<Respon
     try {
       const url = `${base}${path}`;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
       const res = await fetch(url, {
         ...options,
         headers: reqHeaders,
@@ -192,25 +186,30 @@ export const loginUser = async (credentials: {
     });
     if (response.ok) {
       const json = await response.json();
-      return json.data;
+      if (json.data) return json.data;
     }
   } catch (err) {
     console.warn('API login error, using local fallback:', err);
   }
 
-  if (credentials.id) {
-    const found = localUsers.find(u => u.id === credentials.id);
-    if (found) return found;
+  const foundUser = localUsers.find(
+    u =>
+      (credentials.regNo && u.regNo?.toLowerCase() === credentials.regNo.toLowerCase()) ||
+      (credentials.email && u.email?.toLowerCase() === credentials.email.toLowerCase()) ||
+      (credentials.id && u.id === credentials.id)
+  );
+
+  if (foundUser) {
+    return foundUser;
   }
-  if (credentials.regNo) {
-    const found = localUsers.find(u => u.regNo?.toLowerCase() === credentials.regNo?.toLowerCase());
-    if (found) return found;
-  }
+
   if (credentials.role) {
-    const found = localUsers.find(u => u.role.toLowerCase() === credentials.role?.toLowerCase());
-    if (found) return found;
+    const roleUser = localUsers.find(u => u.role.toLowerCase() === credentials.role?.toLowerCase());
+    if (roleUser) return roleUser;
   }
-  return localUsers[0];
+
+  const defaultUser = localUsers.find(u => u.role === 'admin') || localUsers[0];
+  return defaultUser;
 };
 
 export const loginWithGoogle = async (googleUser?: { id?: string; email?: string; name?: string; avatar?: string }): Promise<User> => {
@@ -228,10 +227,10 @@ export const loginWithGoogle = async (googleUser?: { id?: string; email?: string
     });
     if (response.ok) {
       const json = await response.json();
-      return json.data;
+      if (json.data) return json.data;
     }
-  } catch (err) {
-    console.warn('Google auth API call error, falling back:', err);
+  } catch (err: any) {
+    console.warn('loginWithGoogle API error, using local fallback:', err);
   }
 
   const defaultUser = localUsers.find(u => u.role === 'admin') || localUsers[0];
@@ -267,6 +266,8 @@ export const createUser = async (userData: {
   avatar?: string;
   phone?: string;
   officeHours?: string;
+  regNo?: string;
+  password?: string;
 }): Promise<User> => {
   try {
     const response = await apiFetch('/users', {
@@ -291,6 +292,8 @@ export const createUser = async (userData: {
     avatar: userData.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     phone: userData.phone || '+1 (555) 123-4567',
     officeHours: userData.officeHours || 'Mon - Fri, 09:00 AM - 05:00 PM',
+    regNo: userData.regNo || `FAC-2026-${Math.floor(100 + Math.random() * 900)}`,
+    password: userData.password || '123456',
   };
 
   localUsers.push(newUser);

@@ -38,6 +38,8 @@ interface AdminNavigatorProps {
     department: string;
     title: string;
     avatar?: string;
+    regNo?: string;
+    password?: string;
   }) => void;
   onUpdateFaculty: (updatedData: {
     id: string;
@@ -45,6 +47,8 @@ interface AdminNavigatorProps {
     email: string;
     department: string;
     regNo: string;
+    title?: string;
+    password?: string;
   }) => void;
   onDeleteFaculty?: (id: string) => void;
   activeTab: AdminTab;
@@ -254,7 +258,7 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
 // 3. Master App Navigator Component
 // ==========================================
 export const AppNavigator: React.FC = () => {
-  const { colors } = useTheme();
+  const { colors, setTheme } = useTheme();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allFaculty, setAllFaculty] = useState<User[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -290,6 +294,7 @@ export const AppNavigator: React.FC = () => {
   // Auth Handlers
   const handleLoginSuccess = (user: User) => {
     setCurrentUser(user);
+    setTheme(user.themeMode || 'light');
     if (user.role === 'admin') {
       setActiveAdminTab('schedule');
     } else {
@@ -299,6 +304,7 @@ export const AppNavigator: React.FC = () => {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setTheme('light');
   };
 
   // Admin Handlers
@@ -353,6 +359,8 @@ export const AppNavigator: React.FC = () => {
     department: string;
     title: string;
     avatar?: string;
+    regNo?: string;
+    password?: string;
   }) => {
     try {
       const createdUser = await createUser(facultyData);
@@ -372,6 +380,8 @@ export const AppNavigator: React.FC = () => {
     email: string;
     department: string;
     regNo: string;
+    title?: string;
+    password?: string;
   }) => {
     try {
       const updated = await updateUser(updatedData.id, updatedData);
