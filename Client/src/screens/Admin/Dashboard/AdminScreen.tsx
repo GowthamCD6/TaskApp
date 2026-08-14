@@ -40,11 +40,20 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 }) => {
   const { colors } = useTheme();
   const [filterFacultyId, setFilterFacultyId] = useState<string>('all');
+  const [showAllDates, setShowAllDates] = useState<boolean>(false);
   const [assignModalVisible, setAssignModalVisible] = useState(false);
 
-  // Filter tasks by selected date and faculty
+  // Helper to normalize YYYY-MM-DD string
+  const normalizeDateStr = (rawDate?: string) => {
+    if (!rawDate) return '';
+    return rawDate.split('T')[0].split(' ')[0].trim();
+  };
+
+  // Filter tasks by date and faculty
   const filteredTasks = tasks.filter(t => {
-    const matchesDate = t.date === selectedDate;
+    const taskDate = normalizeDateStr(t.date);
+    const targetDate = normalizeDateStr(selectedDate);
+    const matchesDate = showAllDates || taskDate === targetDate;
     const matchesFaculty = filterFacultyId === 'all' || t.assignedTo === filterFacultyId;
     return matchesDate && matchesFaculty;
   });
@@ -64,18 +73,45 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Date Navigation Calendar Strip */}
-      <CalendarStrip selectedDate={selectedDate} onSelectDate={onSelectDate} />
+      <CalendarStrip
+        selectedDate={selectedDate}
+        onSelectDate={d => {
+          setShowAllDates(false);
+          onSelectDate(d);
+        }}
+      />
 
       {/* Filter & Primary Action Header */}
       <View style={[styles.actionHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
         <View style={styles.filterRow}>
-          <View style={styles.filterTitleGroup}>
-            <Icon name="users" size={14} color={colors.primary} />
-            <Text style={[styles.filterLabel, { color: colors.subText }]}>Schedule Filter:</Text>
-          </View>
-
+          {/* Date Scope Toggle Pill */}
           <TouchableOpacity
-            style={[styles.filterDropdown, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}
+            style={[
+              styles.filterDropdown,
+              {
+                backgroundColor: showAllDates ? colors.primary : colors.surface,
+                borderColor: showAllDates ? colors.primary : colors.inputBorder,
+                marginRight: 8,
+              },
+            ]}
+            onPress={() => setShowAllDates(!showAllDates)}
+            activeOpacity={0.8}
+          >
+            <Icon name="calendar" size={13} color={showAllDates ? '#FFFFFF' : colors.primary} />
+            <Text
+              style={[
+                styles.filterDropdownText,
+                { color: showAllDates ? '#FFFFFF' : colors.primary, marginLeft: 4 },
+              ]}
+              numberOfLines={1}
+            >
+              {showAllDates ? `All Dates (${tasks.length})` : 'Selected Date'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Faculty Dropdown Toggle */}
+          <TouchableOpacity
+            style={[styles.filterDropdown, { backgroundColor: colors.surface, borderColor: colors.inputBorder, flex: 1 }]}
             onPress={() => {
               const facultyIds = ['all', ...allFaculty.map(f => f.id)];
               const currentIndex = facultyIds.indexOf(filterFacultyId);
@@ -86,7 +122,7 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           >
             <Text style={[styles.filterDropdownText, { color: colors.primary }]} numberOfLines={1}>
               {filterFacultyId === 'all'
-                ? 'All Faculty Members'
+                ? 'All Faculty'
                 : allFaculty.find(f => f.id === filterFacultyId)?.name}
             </Text>
             <View style={{ marginLeft: 6 }}>
@@ -154,8 +190,23 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             </View>
             <Text style={[styles.emptyTitleText, { color: colors.text }]}>No Tasks Scheduled</Text>
             <Text style={[styles.emptySubtitleText, { color: colors.subText }]}>
-              No active tasks found for {selectedDate}. Tap above to assign a new academic duty.
+              {tasks.length > 0
+                ? `No tasks found for ${selectedDate}. There are ${tasks.length} task(s) on other dates.`
+                : 'No active tasks found in database. Tap above to assign a new academic duty.'}
             </Text>
+
+            {tasks.length > 0 && !showAllDates && (
+              <TouchableOpacity
+                style={[
+                  styles.assignTaskBtn,
+                  { backgroundColor: colors.primary, marginTop: 14, paddingHorizontal: 20 },
+                ]}
+                onPress={() => setShowAllDates(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.assignTaskBtnText}>Show All {tasks.length} Tasks</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
         renderItem={({ item }) => {
@@ -234,6 +285,15 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
                     </Text>
                   </View>
                 </View>
+
+                {item.date ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, marginBottom: 4 }}>
+                    <Icon name="calendar" size={10} color={colors.primary} />
+                    <Text style={{ fontSize: 11, fontWeight: '600', color: colors.primary, marginLeft: 4 }}>
+                      {normalizeDateStr(item.date)}
+                    </Text>
+                  </View>
+                ) : null}
 
                 {item.description ? (
                   <Text style={[styles.taskDescText, { color: colors.subText }]}>{item.description}</Text>

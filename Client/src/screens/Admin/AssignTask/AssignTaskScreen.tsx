@@ -7,10 +7,44 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { User, Priority } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
+
+const parseDateString = (dateStr: string): Date => {
+  if (!dateStr) return new Date();
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  return new Date();
+};
+
+const parseTimeString = (timeStr: string, baseDateStr?: string): Date => {
+  const baseDate = parseDateString(baseDateStr || '');
+  if (!timeStr) return baseDate;
+  const parts = timeStr.split(':').map(Number);
+  if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    baseDate.setHours(parts[0], parts[1], 0, 0);
+  }
+  return baseDate;
+};
+
+const formatDateToString = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const formatTimeToString = (d: Date): string => {
+  const hours = d.getHours().toString().padStart(2, '0');
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
 
 interface AssignTaskScreenProps {
   allFaculty: User[];
@@ -46,6 +80,9 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
   const [endTime, setEndTime] = useState('11:00');
   const [priority, setPriority] = useState<Priority>('Medium');
   const [showFacultyDropdown, setShowFacultyDropdown] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   const toggleFacultySelection = (id: string) => {
     setSelectedFacultyIds(prev =>
@@ -320,58 +357,118 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
             numberOfLines={3}
           />
 
-          {/* Date Input */}
-          <Text style={[styles.label, { color: colors.subText }]}>Task Date (YYYY-MM-DD)</Text>
-          <TextInput
+          {/* Task Date (Calendar Picker) */}
+          <Text style={[styles.label, { color: colors.subText }]}>Task Date</Text>
+          <TouchableOpacity
             style={[
-              styles.input,
+              styles.pickerButton,
               {
                 backgroundColor: colors.inputBg,
                 borderColor: colors.inputBorder,
-                color: colors.text,
               },
             ]}
-            value={date}
-            onChangeText={setDate}
-            placeholder="2026-08-13"
-            placeholderTextColor={colors.mutedText}
-          />
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.pickerButtonContent}>
+              <Icon name="calendar" size={16} color={colors.primary} />
+              <Text style={[styles.pickerButtonText, { color: colors.text }]}>
+                {date || defaultDate || formatDateToString(new Date())}
+              </Text>
+            </View>
+            <Icon name="chevron-down" size={14} color={colors.subText} />
+          </TouchableOpacity>
 
-          {/* Time Slot Inputs */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={parseDateString(date || defaultDate)}
+              mode="date"
+              display="default"
+              onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                setShowDatePicker(Platform.OS === 'ios');
+                if (selectedDate) {
+                  setDate(formatDateToString(selectedDate));
+                }
+              }}
+            />
+          )}
+
+          {/* Time Slot Inputs (Clock Pickers) */}
           <View style={styles.timeRow}>
             <View style={styles.timeCol}>
               <Text style={[styles.label, { color: colors.subText }]}>Start Time</Text>
-              <TextInput
+              <TouchableOpacity
                 style={[
-                  styles.input,
+                  styles.pickerButton,
                   {
                     backgroundColor: colors.inputBg,
                     borderColor: colors.inputBorder,
-                    color: colors.text,
                   },
                 ]}
-                value={startTime}
-                onChangeText={setStartTime}
-                placeholder="09:00"
-                placeholderTextColor={colors.mutedText}
-              />
+                onPress={() => setShowStartTimePicker(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.pickerButtonContent}>
+                  <Icon name="clock" size={16} color={colors.primary} />
+                  <Text style={[styles.pickerButtonText, { color: colors.text }]}>
+                    {startTime || '09:00'}
+                  </Text>
+                </View>
+                <Icon name="chevron-down" size={14} color={colors.subText} />
+              </TouchableOpacity>
+
+              {showStartTimePicker && (
+                <DateTimePicker
+                  value={parseTimeString(startTime, date || defaultDate)}
+                  mode="time"
+                  display="default"
+                  is24Hour={true}
+                  onChange={(event: DateTimePickerEvent, selectedTime?: Date) => {
+                    setShowStartTimePicker(Platform.OS === 'ios');
+                    if (selectedTime) {
+                      setStartTime(formatTimeToString(selectedTime));
+                    }
+                  }}
+                />
+              )}
             </View>
+
             <View style={styles.timeCol}>
               <Text style={[styles.label, { color: colors.subText }]}>End Time</Text>
-              <TextInput
+              <TouchableOpacity
                 style={[
-                  styles.input,
+                  styles.pickerButton,
                   {
                     backgroundColor: colors.inputBg,
                     borderColor: colors.inputBorder,
-                    color: colors.text,
                   },
                 ]}
-                value={endTime}
-                onChangeText={setEndTime}
-                placeholder="11:00"
-                placeholderTextColor={colors.mutedText}
-              />
+                onPress={() => setShowEndTimePicker(true)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.pickerButtonContent}>
+                  <Icon name="clock" size={16} color={colors.primary} />
+                  <Text style={[styles.pickerButtonText, { color: colors.text }]}>
+                    {endTime || '11:00'}
+                  </Text>
+                </View>
+                <Icon name="chevron-down" size={14} color={colors.subText} />
+              </TouchableOpacity>
+
+              {showEndTimePicker && (
+                <DateTimePicker
+                  value={parseTimeString(endTime, date || defaultDate)}
+                  mode="time"
+                  display="default"
+                  is24Hour={true}
+                  onChange={(event: DateTimePickerEvent, selectedTime?: Date) => {
+                    setShowEndTimePicker(Platform.OS === 'ios');
+                    if (selectedTime) {
+                      setEndTime(formatTimeToString(selectedTime));
+                    }
+                  }}
+                />
+              )}
             </View>
           </View>
 
@@ -610,6 +707,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     fontSize: 14,
+  },
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    height: 46,
+  },
+  pickerButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pickerButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
   },
   textArea: {
     borderRadius: 12,
