@@ -5,6 +5,10 @@ const {
   markNotificationRead,
   markAllNotificationsRead,
 } = require('../controllers/notificationController');
+const { verifyToken } = require('../middleware/authMiddleware');
+
+// All notification routes require authentication
+router.use(verifyToken);
 
 router.get('/', getNotifications);
 router.patch('/read-all', markAllNotificationsRead);

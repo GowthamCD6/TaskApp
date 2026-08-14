@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { User, Task, Priority, AdminTab, FacultyTab, NotificationItem } from '../types';
-import { fetchUsers, fetchTasks, createTask, completeTask, createUser, updateUser, deleteUser, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
+import { fetchUsers, fetchTasks, createTask, completeTask, createUser, updateUser, deleteUser, fetchNotifications, markNotificationRead, markAllNotificationsRead, verifyAuthToken } from '../services/api';
+import { saveUserSession, getUserSession, clearUserSession } from '../services/storage';
 import { TabBar } from '../components/navigation/TabBar';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
 import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
@@ -22,6 +23,8 @@ interface AdminNavigatorProps {
   currentAdmin?: User | null;
   allFaculty: User[];
   allTasks: Task[];
+  loading?: boolean;
+  onRefresh?: () => Promise<void> | void;
   selectedDate: string;
   onSelectDate: (date: string) => void;
   onAssignTask: (taskData: {
@@ -62,6 +65,8 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
   currentAdmin,
   allFaculty,
   allTasks,
+  loading,
+  onRefresh,
   selectedDate,
   onSelectDate,
   onAssignTask,
@@ -105,6 +110,8 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
           <FacultyDirectoryScreen
             allFaculty={allFaculty}
             allTasks={allTasks}
+            loading={loading}
+            onRefresh={onRefresh}
             onAddFaculty={onAddFaculty}
             onAssignTaskForFaculty={handleAssignTaskForFaculty}
             onUpdateFaculty={onUpdateFaculty}
@@ -266,16 +273,51 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
 export const AppNavigator: React.FC = () => {
   const { colors, setTheme } = useTheme();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState<boolean>(true);
   const [allFaculty, setAllFaculty] = useState<User[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Active Tab States
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>('schedule');
   const [activeFacultyTab, setActiveFacultyTab] = useState<FacultyTab>('schedule');
+
+  // Restore Persisted User Session on App Launch with JWT Verification
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const savedUser = await getUserSession();
+        if (savedUser && savedUser.id) {
+          // Set initial cached state instantly for zero-flicker UI
+          setCurrentUser(savedUser);
+          if (savedUser.themeMode) {
+            setTheme(savedUser.themeMode);
+          }
+          if (savedUser.role === 'admin') {
+            setActiveAdminTab('schedule');
+          } else {
+            setActiveFacultyTab('schedule');
+          }
+
+          // Verify token against backend in background
+          const verifiedUser = await verifyAuthToken();
+          if (verifiedUser) {
+            setCurrentUser(verifiedUser);
+            await saveUserSession(verifiedUser);
+          }
+        }
+      } catch (err) {
+        console.warn('Error restoring user session:', err);
+      } finally {
+        setIsRestoringSession(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
 
   // Initial Data Loader
   const loadData = useCallback(async () => {
@@ -294,12 +336,15 @@ export const AppNavigator: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (currentUser) {
+      loadData();
+    }
+  }, [currentUser, loadData]);
 
   // Auth Handlers
-  const handleLoginSuccess = (user: User) => {
+  const handleLoginSuccess = async (user: User) => {
     setCurrentUser(user);
+    await saveUserSession(user);
     setTheme(user.themeMode || 'light');
     if (user.role === 'admin') {
       setActiveAdminTab('schedule');
@@ -308,7 +353,8 @@ export const AppNavigator: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await clearUserSession();
     setCurrentUser(null);
     setTheme('light');
   };
@@ -424,7 +470,7 @@ export const AppNavigator: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (isRestoringSession) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -453,13 +499,18 @@ export const AppNavigator: React.FC = () => {
             currentAdmin={currentUser}
             allFaculty={allFaculty}
             allTasks={tasks}
+            loading={loading}
+            onRefresh={loadData}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             onAssignTask={handleAssignTask}
             onAddFaculty={handleAddFaculty}
             onUpdateFaculty={handleUpdateFaculty}
             onDeleteFaculty={handleDeleteFaculty}
-            onUpdateAdminProfile={(updated) => setCurrentUser(updated)}
+            onUpdateAdminProfile={async (updated) => {
+              setCurrentUser(updated);
+              await saveUserSession(updated);
+            }}
             activeTab={activeAdminTab}
             onTabChange={setActiveAdminTab}
             onLogout={handleLogout}

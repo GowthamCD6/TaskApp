@@ -7,6 +7,10 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const themeRoutes = require('./routes/themeRoutes');
 
 const app = express();
+
+// Disable HTTP ETag caching for real-time mobile API synchronization
+app.set('etag', false);
+
 // Middleware
 app.use(cors());
 app.use(express.json());

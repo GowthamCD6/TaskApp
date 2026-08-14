@@ -171,18 +171,10 @@ const updateUser = async (req, res) => {
     const updatedOfficeHours = officeHours !== undefined ? officeHours : current.office_hours;
     const updatedRegNo = regNo !== undefined ? regNo.trim() : current.reg_no;
 
-    const requestedMode = themeMode || theme_mode;
-    let updatedThemeModeId = current.theme_mode_id || 1;
-    if (themeModeId !== undefined) {
-      updatedThemeModeId = Number(themeModeId);
-    } else if (requestedMode !== undefined) {
-      updatedThemeModeId = requestedMode === 'dark' ? 2 : 1;
-    }
-
-    const updatedPassword = password !== undefined ? password.trim() : current.password;
+    const updatedPassword = (password && password.trim()) ? password.trim() : current.password;
 
     await pool.query(
-      `UPDATE users SET name = ?, email = ?, department = ?, title = ?, avatar = ?, phone = ?, office_hours = ?, reg_no = ?, password = ?, theme_mode_id = ? WHERE id = ?`,
+      `UPDATE users SET name = ?, email = ?, department = ?, title = ?, avatar = ?, phone = ?, office_hours = ?, reg_no = ?, password = ? WHERE id = ?`,
       [
         updatedName,
         updatedEmail,
@@ -193,7 +185,6 @@ const updateUser = async (req, res) => {
         updatedOfficeHours,
         updatedRegNo,
         updatedPassword,
-        updatedThemeModeId,
         id,
       ]
     );

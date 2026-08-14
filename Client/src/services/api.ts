@@ -1,9 +1,16 @@
 import { User, Task, NotificationItem } from '../types';
 import { API_ENDPOINTS, API_TIMEOUT_MS } from '../config/env';
+import { getAuthToken, saveAuthToken, clearUserSession } from './storage';
 
 const apiFetch = async (path: string, options: RequestInit = {}): Promise<Response> => {
   let lastError: any = null;
-  const reqHeaders = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  const token = await getAuthToken();
+
+  const reqHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...((options.headers as Record<string, string>) || {}),
+  };
 
   for (const base of API_ENDPOINTS) {
     try {
@@ -26,19 +33,6 @@ const apiFetch = async (path: string, options: RequestInit = {}): Promise<Respon
   throw lastError || new Error('Unable to connect to backend server. Please check your network connection.');
 };
 
-// Local fallback mock database in case backend is offline
-const formatDate = (offsetDays = 0) => {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().split('T')[0];
-};
-
-const todayStr = formatDate(0);
-const tomorrowStr = formatDate(1);
-
-let localUsers: User[] = [];
-let localTasks: Task[] = [];
-
 export const loginUser = async (credentials: {
   regNo?: string;
   email?: string;
@@ -52,6 +46,9 @@ export const loginUser = async (credentials: {
   });
   const json = await response.json();
   if (response.ok && json.data) {
+    if (json.token) {
+      await saveAuthToken(json.token);
+    }
     return json.data;
   }
   throw new Error(json.message || 'Invalid login credentials.');
@@ -64,9 +61,32 @@ export const loginWithGoogle = async (googleUser?: { id?: string; email?: string
   });
   const json = await response.json();
   if (response.ok && json.data) {
+    if (json.token) {
+      await saveAuthToken(json.token);
+    }
     return json.data;
   }
   throw new Error(json.message || 'Google Authentication failed.');
+};
+
+export const verifyAuthToken = async (): Promise<User | null> => {
+  try {
+    const token = await getAuthToken();
+    if (!token) return null;
+
+    const response = await apiFetch('/auth/me', { method: 'GET' });
+    if (response.ok) {
+      const json = await response.json();
+      return json.data || null;
+    }
+    if (response.status === 401) {
+      await clearUserSession();
+      return null;
+    }
+  } catch (err) {
+    console.warn('Token verification error:', err);
+  }
+  return null;
 };
 
 export const fetchUsers = async (role?: string): Promise<User[]> => {

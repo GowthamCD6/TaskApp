@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 // ============================================================
 
 /** Your machine's Wi-Fi / LAN IP (run `ipconfig` to find it) */
-export const API_HOST_IP = '10.150.250.40';
+export const API_HOST_IP = '10.150.250.203';
 
 /** Backend server port (must match Server/.env PORT) */
 export const API_PORT = 5000;

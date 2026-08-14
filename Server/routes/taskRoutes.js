@@ -7,6 +7,10 @@ const {
   completeTask,
   deleteTask,
 } = require('../controllers/taskController');
+const { verifyToken, requireRole } = require('../middleware/authMiddleware');
+
+// All task routes require authentication
+router.use(verifyToken);
 
 router.route('/')
   .get(getTasks)
@@ -14,7 +18,7 @@ router.route('/')
 
 router.route('/:id')
   .get(getTaskById)
-  .delete(deleteTask);
+  .delete(requireRole('admin'), deleteTask);
 
 router.patch('/:id/complete', completeTask);
 

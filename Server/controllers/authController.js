@@ -1,7 +1,42 @@
+const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const { pool } = require('../config/db');
+const { JWT_SECRET } = require('../middleware/authMiddleware');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30d';
+
+// Helper to generate signed JWT token
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role || 'faculty',
+      regNo: user.reg_no || user.regNo || '',
+      name: user.name || '',
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+};
+
+// Helper to format user response
+const formatUser = (user) => ({
+  id: user.id,
+  googleId: user.google_id || null,
+  regNo: user.reg_no || '',
+  name: user.name || '',
+  email: user.email || '',
+  role: user.role || 'faculty',
+  department: user.department || '',
+  title: user.title || '',
+  avatar: user.avatar || '',
+  phone: user.phone || '',
+  officeHours: user.office_hours || '',
+  themeModeId: user.theme_mode_id || (user.theme_mode === 'dark' ? 2 : 1),
+  themeMode: (user.theme_mode_id === 2 || user.theme_mode === 'dark') ? 'dark' : 'light',
+});
 
 // POST /api/auth/login (Credential & Role Login)
 const login = async (req, res) => {
@@ -39,24 +74,14 @@ const login = async (req, res) => {
       });
     }
 
+    const token = generateToken(user);
+    const formattedData = formatUser(user);
+
     res.status(200).json({
       status: 'success',
       message: `Welcome back, ${user.name}`,
-      data: {
-        id: user.id,
-        googleId: user.google_id || null,
-        regNo: user.reg_no || '',
-        name: user.name || '',
-        email: user.email || '',
-        role: user.role || 'faculty',
-        department: user.department || '',
-        title: user.title || '',
-        avatar: user.avatar || '',
-        phone: user.phone || '',
-        officeHours: user.office_hours || '',
-        themeModeId: user.theme_mode_id || (user.theme_mode === 'dark' ? 2 : 1),
-        themeMode: (user.theme_mode_id === 2 || user.theme_mode === 'dark') ? 'dark' : 'light',
-      },
+      token,
+      data: formattedData,
     });
   } catch (err) {
     console.error('❌ Login Error:', err);
@@ -70,15 +95,15 @@ const login = async (req, res) => {
 // POST /api/auth/google (Google Sign-In Authentication)
 const googleLogin = async (req, res) => {
   try {
-    const { token, idToken, googleUser: bodyGoogleUser, user: bodyUser } = req.body;
+    const { token: clientToken, idToken, googleUser: bodyGoogleUser, user: bodyUser } = req.body;
     const googleUser = bodyGoogleUser || bodyUser;
 
     let payload = null;
 
-    if (idToken || token) {
+    if (idToken || clientToken) {
       try {
         const ticket = await client.verifyIdToken({
-          idToken: idToken || token,
+          idToken: idToken || clientToken,
           audience: process.env.GOOGLE_CLIENT_ID,
         });
         payload = ticket.getPayload();
@@ -128,24 +153,14 @@ const googleLogin = async (req, res) => {
       if (picture) user.avatar = picture;
     }
 
+    const jwtToken = generateToken(user);
+    const formattedData = formatUser(user);
+
     res.status(200).json({
       status: 'success',
       message: `Welcome ${user.name}`,
-      data: {
-        id: user.id,
-        googleId: user.google_id,
-        regNo: user.reg_no || '',
-        name: user.name || '',
-        email: user.email || '',
-        role: user.role || 'faculty',
-        department: user.department || '',
-        title: user.title || '',
-        avatar: user.avatar || '',
-        phone: user.phone || '',
-        officeHours: user.office_hours || '',
-        themeModeId: user.theme_mode_id || (user.theme_mode === 'dark' ? 2 : 1),
-        themeMode: (user.theme_mode_id === 2 || user.theme_mode === 'dark') ? 'dark' : 'light',
-      },
+      token: jwtToken,
+      data: formattedData,
     });
   } catch (err) {
     console.error('❌ Google Login Error:', err);
@@ -157,7 +172,38 @@ const googleLogin = async (req, res) => {
   }
 };
 
+// GET /api/auth/me (Verify JWT Token & Return Active User Profile)
+const getMe = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User session no longer exists in database.',
+      });
+    }
+
+    const user = rows[0];
+    const formattedData = formatUser(user);
+
+    res.status(200).json({
+      status: 'success',
+      data: formattedData,
+    });
+  } catch (err) {
+    console.error('❌ getMe Error:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to retrieve authenticated user profile.',
+    });
+  }
+};
+
 module.exports = {
   login,
   googleLogin,
+  getMe,
+  generateToken,
 };
