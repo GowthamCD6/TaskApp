@@ -275,9 +275,12 @@ export const AppNavigator: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isRestoringSession, setIsRestoringSession] = useState<boolean>(true);
   const [allFaculty, setAllFaculty] = useState<User[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const getTodayStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayStr());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 

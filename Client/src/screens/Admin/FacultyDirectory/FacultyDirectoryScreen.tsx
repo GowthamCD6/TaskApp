@@ -939,8 +939,18 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   completionRateText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
+  },
+  progressBarTrack: {
+    height: 4,
+    width: '100%',
+    backgroundColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2,
   },
   actionBtnRow: {
     flexDirection: 'row',

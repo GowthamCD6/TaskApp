@@ -19,14 +19,23 @@ export const CalendarStrip: React.FC<CalendarStripProps> = ({
 }) => {
   const { colors } = useTheme();
 
+  const getLocalYYYYMMDD = (d: Date): string => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getLocalYYYYMMDD(new Date());
+
   // Generate 9 days around today
   const days = Array.from({ length: 9 }).map((_, index) => {
     const d = new Date();
     d.setDate(d.getDate() - 1 + index); // Starts from yesterday
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = getLocalYYYYMMDD(d);
     const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
     const dayNum = d.getDate();
-    const isToday = new Date().toISOString().split('T')[0] === dateStr;
+    const isToday = todayStr === dateStr;
 
     return {
       dateStr,
