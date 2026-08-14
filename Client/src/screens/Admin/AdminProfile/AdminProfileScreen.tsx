@@ -10,11 +10,14 @@ import {
   TextInput,
   Image,
   ActivityIndicator,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { User, Task } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
-import { updateUser } from '../../../services/api';
+import { updateUser, uploadAvatar, getAvatarUrl } from '../../../services/api';
 
 interface AdminProfileScreenProps {
   currentUser?: User | null;
@@ -52,12 +55,6 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
     }
   );
 
-  useEffect(() => {
-    if (activeUser) {
-      setAdminUser(activeUser);
-    }
-  }, [activeUser]);
-
   // Modal State for Editing Profile Details
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editName, setEditName] = useState(adminUser.name || '');
@@ -65,7 +62,15 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
   const [editDepartment, setEditDepartment] = useState(adminUser.department || '');
   const [editPhone, setEditPhone] = useState(adminUser.phone || '');
   const [editHours, setEditHours] = useState(adminUser.officeHours || '');
+  const [editAvatar, setEditAvatar] = useState(adminUser.avatar || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  useEffect(() => {
+    if (activeUser) {
+      setAdminUser(activeUser);
+    }
+  }, [activeUser]);
 
   const handleToggleThemeMode = async () => {
     const nextTheme = isDark ? 'light' : 'dark';
@@ -91,6 +96,70 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
   const pendingTasks = totalTasks - completedTasks;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+  // Gallery Image Picker Handler
+  const handlePickFromGallery = async (saveImmediately: boolean = false) => {
+    try {
+      if (Platform.OS === 'android') {
+        try {
+          const apiLevel = typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
+          if (apiLevel >= 33) {
+            await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES);
+          } else {
+            await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
+          }
+        } catch {
+          // Ignore permission request error and continue to picker
+        }
+      }
+
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        maxWidth: 600,
+        maxHeight: 600,
+        includeBase64: true,
+      });
+
+      if (result.didCancel) return;
+      if (result.errorCode) {
+        Alert.alert('Gallery Error', result.errorMessage || 'Unable to open gallery.');
+        return;
+      }
+
+      if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        let avatarUri = '';
+        if (asset.base64) {
+          avatarUri = `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`;
+        } else if (asset.uri) {
+          avatarUri = asset.uri;
+        }
+
+        if (avatarUri) {
+          setEditAvatar(avatarUri);
+
+          if (saveImmediately) {
+            setIsUploadingPhoto(true);
+            try {
+              const updated = await uploadAvatar(adminUser.id, avatarUri);
+              setAdminUser(updated);
+              if (onUpdateUser) {
+                onUpdateUser(updated);
+              }
+              Alert.alert('Photo Updated', 'Administrator profile photo has been updated.');
+            } catch (err: any) {
+              Alert.alert('Upload Failed', err.message || 'Could not save photo to server.');
+            } finally {
+              setIsUploadingPhoto(false);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      Alert.alert('Image Picker Error', err.message || 'Failed to select image from gallery.');
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!editName.trim()) {
       Alert.alert('Required Field', 'Please enter your full name.');
@@ -99,12 +168,21 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
 
     setIsSaving(true);
     try {
+      let finalAvatar = editAvatar.trim();
+
+      // If user selected a new base64 image in modal, upload to server disk
+      if (finalAvatar.startsWith('data:')) {
+        const avatarRes = await uploadAvatar(adminUser.id, finalAvatar);
+        finalAvatar = avatarRes.avatar;
+      }
+
       const payload: Partial<User> = {
         name: editName.trim(),
         title: editTitle.trim(),
         department: editDepartment.trim(),
         phone: editPhone.trim(),
         officeHours: editHours.trim(),
+        avatar: finalAvatar,
       };
 
       const updated = await updateUser(adminUser.id, payload);
@@ -153,6 +231,7 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
             setEditDepartment(adminUser.department || '');
             setEditPhone(adminUser.phone || '');
             setEditHours(adminUser.officeHours || '');
+            setEditAvatar(adminUser.avatar || '');
             setEditModalVisible(true);
           }}
           activeOpacity={0.8}
@@ -179,17 +258,35 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
           <View style={[styles.coverAccent, { backgroundColor: colors.primary }]} />
 
           <View style={styles.heroBody}>
-            {/* Avatar Circle */}
-            <View style={styles.avatarWrapper}>
-              {adminUser.avatar ? (
-                <Image source={{ uri: adminUser.avatar }} style={styles.avatarImage} />
+            {/* Interactive Avatar with Gallery Picker Badge */}
+            <TouchableOpacity
+              style={styles.avatarWrapper}
+              onPress={() => handlePickFromGallery(true)}
+              activeOpacity={0.85}
+            >
+              {isUploadingPhoto ? (
+                <View style={[styles.avatarCircle, { backgroundColor: colors.surface }]}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : adminUser.avatar ? (
+                <Image source={{ uri: getAvatarUrl(adminUser.avatar) }} style={styles.avatarImage} />
               ) : (
                 <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
                   <Text style={styles.avatarInitials}>{initials}</Text>
                 </View>
               )}
+              
+              {/* Camera Upload Badge */}
+              <View style={[styles.cameraBadge, { backgroundColor: colors.primary, borderColor: colors.card }]}>
+                <Icon name="plus" size={10} color="#FFFFFF" />
+              </View>
+
               <View style={[styles.statusIndicatorDot, { borderColor: colors.card }]} />
-            </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => handlePickFromGallery(true)} style={{ marginBottom: 4 }}>
+              <Text style={[styles.changePhotoText, { color: colors.primary }]}>📷 Change Profile Photo</Text>
+            </TouchableOpacity>
 
             {/* Profile Info */}
             <Text style={[styles.userNameText, { color: colors.text }]}>{adminUser.name}</Text>
@@ -389,6 +486,40 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Avatar Uploader Section inside Modal */}
+              <View style={styles.modalAvatarSection}>
+                <View style={styles.avatarWrapper}>
+                  {editAvatar ? (
+                    <Image source={{ uri: getAvatarUrl(editAvatar) }} style={styles.avatarImage} />
+                  ) : (
+                    <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.avatarInitials}>{initials}</Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.modalAvatarActions}>
+                  <TouchableOpacity
+                    style={[styles.uploadGalleryBtn, { backgroundColor: colors.primary }]}
+                    onPress={() => handlePickFromGallery(false)}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="plus" size={12} color="#FFFFFF" />
+                    <Text style={styles.uploadGalleryBtnText}>Choose from Gallery</Text>
+                  </TouchableOpacity>
+
+                  {editAvatar ? (
+                    <TouchableOpacity
+                      style={[styles.removePhotoBtn, { backgroundColor: 'rgba(239, 68, 68, 0.12)' }]}
+                      onPress={() => setEditAvatar('')}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.removePhotoBtnText}>Remove Photo</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
+
               <Text style={[styles.inputLabel, { color: colors.subText }]}>Full Name *</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.inputBorder, color: colors.text }]}
@@ -519,7 +650,7 @@ const styles = StyleSheet.create({
   },
   avatarWrapper: {
     position: 'relative',
-    marginBottom: 10,
+    marginBottom: 6,
   },
   avatarCircle: {
     width: 76,
@@ -542,6 +673,22 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  cameraBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  changePhotoText: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   statusIndicatorDot: {
     position: 'absolute',
@@ -764,6 +911,42 @@ const styles = StyleSheet.create({
   },
   closeBtnText: {
     fontSize: 14,
+    fontWeight: '700',
+  },
+  modalAvatarSection: {
+    alignItems: 'center',
+    marginBottom: 14,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(150, 150, 150, 0.2)',
+  },
+  modalAvatarActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  uploadGalleryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    gap: 4,
+  },
+  uploadGalleryBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  removePhotoBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  removePhotoBtnText: {
+    color: '#EF4444',
+    fontSize: 12,
     fontWeight: '700',
   },
   inputLabel: {

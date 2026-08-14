@@ -171,6 +171,7 @@ interface FacultyNavigatorProps {
   onCompleteTask: (taskId: string, note: string) => void;
   activeTab: FacultyTab;
   onLogout: () => void;
+  onUpdateProfile?: (updated: User) => void;
 }
 
 export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
@@ -181,6 +182,7 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
   onCompleteTask,
   activeTab,
   onLogout,
+  onUpdateProfile,
 }) => {
   const { colors } = useTheme();
 
@@ -243,6 +245,7 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
           <FacultyProfileScreen
             currentFaculty={currentFaculty}
             allTasks={allTasks}
+            onUpdateUser={onUpdateProfile}
             onLogout={onLogout}
           />
         );
@@ -527,6 +530,10 @@ export const AppNavigator: React.FC = () => {
             onCompleteTask={handleCompleteTask}
             activeTab={activeFacultyTab}
             onLogout={handleLogout}
+            onUpdateProfile={async (updated) => {
+              setCurrentUser(updated);
+              await saveUserSession(updated);
+            }}
           />
         )}
       </View>

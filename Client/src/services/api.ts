@@ -1,5 +1,5 @@
 import { User, Task, NotificationItem } from '../types';
-import { API_ENDPOINTS, API_TIMEOUT_MS } from '../config/env';
+import { API_ENDPOINTS, API_TIMEOUT_MS, API_HOST_IP, API_PORT } from '../config/env';
 import { getAuthToken, saveAuthToken, clearUserSession } from './storage';
 
 const apiFetch = async (path: string, options: RequestInit = {}): Promise<Response> => {
@@ -135,6 +135,26 @@ export const updateUser = async (id: string, userData: Partial<User>): Promise<U
     return json.data;
   }
   throw new Error(json.message || 'Failed to update user profile.');
+};
+
+export const getAvatarUrl = (avatar?: string): string => {
+  if (!avatar) return '';
+  if (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('data:')) {
+    return avatar;
+  }
+  return `http://${API_HOST_IP}:${API_PORT}${avatar.startsWith('/') ? '' : '/'}${avatar}`;
+};
+
+export const uploadAvatar = async (userId: string, imageBase64: string): Promise<User> => {
+  const response = await apiFetch(`/users/${userId}/avatar`, {
+    method: 'POST',
+    body: JSON.stringify({ imageBase64 }),
+  });
+  const json = await response.json();
+  if (response.ok && json.data) {
+    return json.data;
+  }
+  throw new Error(json.message || 'Failed to upload profile photo.');
 };
 
 export const deleteUser = async (id: string): Promise<boolean> => {

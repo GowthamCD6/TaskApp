@@ -234,10 +234,75 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// POST /api/users/:id/avatar (Upload avatar to disk & database)
+const uploadUserAvatar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fs = require('fs');
+    const path = require('path');
+
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    let avatarPath = '';
+
+    if (req.file) {
+      // Multipart File Upload via Multer
+      avatarPath = `/uploads/avatars/${req.file.filename}`;
+    } else if (req.body && req.body.imageBase64) {
+      // Base64 Data Upload -> Save to Physical Disk
+      const base64Data = req.body.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `avatar-${id}-${Date.now()}.jpg`;
+      const uploadDir = path.join(__dirname, '../uploads/avatars');
+      
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      fs.writeFileSync(path.join(uploadDir, filename), buffer);
+      avatarPath = `/uploads/avatars/${filename}`;
+    } else if (req.body && req.body.avatar) {
+      avatarPath = req.body.avatar;
+    } else {
+      return res.status(400).json({
+        status: 'error',
+        message: 'No image file or imageBase64 data provided',
+      });
+    }
+
+    // Update MySQL user avatar path
+    await pool.query('UPDATE users SET avatar = ?, updated_at = NOW() WHERE id = ?', [
+      avatarPath,
+      id,
+    ]);
+
+    const [updatedRows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Avatar image stored to disk and user profile updated successfully',
+      data: formatUserRow(updatedRows[0]),
+    });
+  } catch (err) {
+    console.error('Error uploading avatar:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to upload and store avatar',
+    });
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
   createUser,
   updateUser,
   deleteUser,
+  uploadUserAvatar,
 };

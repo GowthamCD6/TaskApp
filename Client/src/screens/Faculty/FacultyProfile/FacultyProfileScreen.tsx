@@ -1,22 +1,37 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ActivityIndicator,
+  Platform,
+  PermissionsAndroid,
+} from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { User, Task } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
-import { updateUser } from '../../../services/api';
+import { updateUser, uploadAvatar, getAvatarUrl } from '../../../services/api';
 
 interface FacultyProfileScreenProps {
   currentFaculty: User | null;
   allTasks: Task[];
+  onUpdateUser?: (updated: User) => void;
   onLogout?: () => void;
 }
 
 export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
   currentFaculty,
   allTasks,
+  onUpdateUser,
   onLogout,
 }) => {
   const { colors, isDark, toggleTheme } = useTheme();
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const handleToggleThemeMode = async () => {
     const nextTheme = isDark ? 'light' : 'dark';
@@ -62,6 +77,65 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
     );
   };
 
+  const handlePickFromGallery = async () => {
+    if (!currentFaculty?.id) return;
+    try {
+      if (Platform.OS === 'android') {
+        try {
+          const apiLevel = typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
+          if (apiLevel >= 33) {
+            await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES);
+          } else {
+            await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE);
+          }
+        } catch {
+          // Ignore permission request error and continue to picker
+        }
+      }
+
+      const result = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+        maxWidth: 600,
+        maxHeight: 600,
+        includeBase64: true,
+      });
+
+      if (result.didCancel) return;
+      if (result.errorCode) {
+        Alert.alert('Gallery Error', result.errorMessage || 'Unable to open photo gallery.');
+        return;
+      }
+
+      if (result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        let avatarUri = '';
+        if (asset.base64) {
+          avatarUri = `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`;
+        } else if (asset.uri) {
+          avatarUri = asset.uri;
+        }
+
+        if (avatarUri) {
+          setIsUploadingPhoto(true);
+          try {
+            const updated = await uploadAvatar(currentFaculty.id, avatarUri);
+            if (onUpdateUser) {
+              onUpdateUser(updated);
+            }
+            Alert.alert('Photo Updated', 'Your profile picture has been updated successfully.');
+          } catch (err: any) {
+            Alert.alert('Upload Failed', err.message || 'Could not save profile picture.');
+          } finally {
+            setIsUploadingPhoto(false);
+          }
+        }
+      }
+    } catch (err: any) {
+      Alert.alert('Image Picker Error', err.message || 'Failed to select image from gallery.');
+    }
+  };
+
   const handleCopyEmail = () => {
     Alert.alert('Faculty Contact Information', `Email: ${currentFaculty.email}`);
   };
@@ -104,17 +178,35 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
           <View style={[styles.coverAccent, { backgroundColor: colors.secondary }]} />
 
           <View style={styles.heroBody}>
-            {/* Avatar Circle or Image */}
-            <View style={styles.avatarWrapper}>
-              {currentFaculty.avatar ? (
-                <Image source={{ uri: currentFaculty.avatar }} style={styles.avatarImage} />
+            {/* Interactive Avatar with Gallery Picker Badge */}
+            <TouchableOpacity
+              style={styles.avatarWrapper}
+              onPress={handlePickFromGallery}
+              activeOpacity={0.85}
+            >
+              {isUploadingPhoto ? (
+                <View style={[styles.avatarCircle, { backgroundColor: colors.surface }]}>
+                  <ActivityIndicator size="small" color={colors.secondary} />
+                </View>
+              ) : currentFaculty.avatar ? (
+                <Image source={{ uri: getAvatarUrl(currentFaculty.avatar) }} style={styles.avatarImage} />
               ) : (
                 <View style={[styles.avatarCircle, { backgroundColor: colors.secondary }]}>
                   <Text style={styles.avatarInitials}>{initials}</Text>
                 </View>
               )}
+              
+              {/* Camera Upload Badge */}
+              <View style={[styles.cameraBadge, { backgroundColor: colors.secondary, borderColor: colors.card }]}>
+                <Icon name="plus" size={10} color="#FFFFFF" />
+              </View>
+
               <View style={[styles.statusIndicatorDot, { borderColor: colors.card }]} />
-            </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handlePickFromGallery} style={{ marginBottom: 4 }}>
+              <Text style={[styles.changePhotoText, { color: colors.secondary }]}>📷 Change Profile Photo</Text>
+            </TouchableOpacity>
 
             {/* Profile Info */}
             <Text style={[styles.userNameText, { color: colors.text }]}>{currentFaculty.name}</Text>
@@ -373,6 +465,22 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  cameraBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+  },
+  changePhotoText: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   statusIndicatorDot: {
     position: 'absolute',
