@@ -200,50 +200,58 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
             {viewMode === 'day' ? `Faculty Workload (${selectedDate})` : 'All-Time Faculty Workload'}
           </Text>
           <View style={styles.facultyStatsList}>
-            {facultyStats.map(({ faculty, total: fTotal, done: fDone, rate: fRate }) => {
-              const initials = faculty.name
-                .split(' ')
-                .map(n => n[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2);
+            {(() => {
+              const maxAssignedTasks = Math.max(...facultyStats.map(s => s.total), 5);
+              return facultyStats.map(({ faculty, total: fTotal, done: fDone }) => {
+                const initials = faculty.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2);
 
-              return (
-                <View
-                  key={faculty.id}
-                  style={[styles.facultyStatCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-                >
-                  <View style={styles.facultyStatHeader}>
-                    <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.avatarText}>{initials}</Text>
+                const workloadRate = Math.min(Math.round((fTotal / maxAssignedTasks) * 100), 100);
+                let workloadColor = '#10B981';
+                if (workloadRate >= 75) workloadColor = '#EF4444';
+                else if (workloadRate >= 40) workloadColor = '#F59E0B';
+
+                return (
+                  <View
+                    key={faculty.id}
+                    style={[styles.facultyStatCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+                  >
+                    <View style={styles.facultyStatHeader}>
+                      <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.avatarText}>{initials}</Text>
+                      </View>
+                      <View style={styles.flex1}>
+                        <Text style={[styles.facultyName, { color: colors.text }]}>{faculty.name}</Text>
+                        <Text style={[styles.facultyDept, { color: colors.subText }]}>
+                          {faculty.department} • {fTotal} Assigned ({fDone} Done)
+                        </Text>
+                      </View>
+                      <View style={[styles.rateTag, { backgroundColor: `${workloadColor}18` }]}>
+                        <Text style={[styles.rateTagText, { color: workloadColor }]}>
+                          {workloadRate}% Workload
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.flex1}>
-                      <Text style={[styles.facultyName, { color: colors.text }]}>{faculty.name}</Text>
-                      <Text style={[styles.facultyDept, { color: colors.subText }]}>
-                        {faculty.department} • {fDone}/{fTotal} Tasks Done
-                      </Text>
-                    </View>
-                    <View style={[styles.rateTag, { backgroundColor: `${fRate >= 70 ? '#10B981' : '#F59E0B'}18` }]}>
-                      <Text style={[styles.rateTagText, { color: fRate >= 70 ? '#10B981' : '#F59E0B' }]}>
-                        {fRate}%
-                      </Text>
+
+                    <View style={[styles.miniProgressTrack, { backgroundColor: colors.surface }]}>
+                      <View
+                        style={[
+                          styles.miniProgressFill,
+                          {
+                            width: `${workloadRate}%`,
+                            backgroundColor: workloadColor,
+                          },
+                        ]}
+                      />
                     </View>
                   </View>
-
-                  <View style={[styles.miniProgressTrack, { backgroundColor: colors.surface }]}>
-                    <View
-                      style={[
-                        styles.miniProgressFill,
-                        {
-                          width: `${fRate}%`,
-                          backgroundColor: fRate >= 70 ? '#10B981' : colors.primary,
-                        },
-                      ]}
-                    />
-                  </View>
-                </View>
-              );
-            })}
+                );
+              });
+            })()}
           </View>
 
           {/* Submitted Faculty Remarks */}

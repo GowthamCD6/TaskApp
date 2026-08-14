@@ -117,7 +117,16 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
             .toUpperCase()
             .slice(0, 2);
 
-          const completionRate = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+          // Workload percentage based on assigned tasks (relative to max faculty load or target threshold of 5 tasks)
+          const maxFacultyAssignedTasks = Math.max(...allFaculty.map(f => getFacultyTaskStats(f.id).total), 5);
+          const workloadPercentage = Math.min(Math.round((stats.total / maxFacultyAssignedTasks) * 100), 100);
+          
+          let workloadColor = '#10B981'; // Light (Green)
+          if (workloadPercentage >= 75) {
+            workloadColor = '#EF4444'; // Heavy (Red)
+          } else if (workloadPercentage >= 40) {
+            workloadColor = '#F59E0B'; // Moderate (Orange)
+          }
 
           return (
             <TouchableOpacity
@@ -220,12 +229,25 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                   </View>
                 </View>
 
-                {/* Completion Rate */}
-                <View style={[styles.completionRatePill, { backgroundColor: `${completionRate >= 70 ? '#10B981' : completionRate >= 40 ? '#F59E0B' : '#EF4444'}15` }]}>
-                  <Text style={[styles.completionRateText, { color: completionRate >= 70 ? '#10B981' : completionRate >= 40 ? '#F59E0B' : '#EF4444' }]}>
-                    {completionRate}%
+                {/* Workload Percentage Badge */}
+                <View style={[styles.completionRatePill, { backgroundColor: `${workloadColor}18` }]}>
+                  <Text style={[styles.completionRateText, { color: workloadColor }]}>
+                    {workloadPercentage}% Workload
                   </Text>
                 </View>
+              </View>
+
+              {/* Task Workload Progress Bar */}
+              <View style={[styles.progressBarTrack, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${workloadPercentage}%`,
+                      backgroundColor: workloadColor,
+                    },
+                  ]}
+                />
               </View>
 
               {/* Action Buttons Row */}
@@ -574,8 +596,18 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   completionRateText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '800',
+  },
+  progressBarTrack: {
+    height: 4,
+    width: '100%',
+    backgroundColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 2,
   },
   actionBtnRow: {
     flexDirection: 'row',

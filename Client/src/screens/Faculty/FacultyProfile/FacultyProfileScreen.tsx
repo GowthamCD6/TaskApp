@@ -185,16 +185,23 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
           </View>
         </View>
 
-        {/* SECTION 2: Progress Track Card */}
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
-          <View style={styles.progressHeaderRow}>
-            <Text style={[styles.infoLabel, { color: colors.subText }]}>Overall Task Completion Rate</Text>
-            <Text style={[styles.rateValText, { color: colors.secondary }]}>{completionRate}%</Text>
-          </View>
-          <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
-            <View style={[styles.progressFill, { width: `${completionRate}%`, backgroundColor: colors.secondary }]} />
-          </View>
-        </View>
+        {/* SECTION 2: Progress Track Card (Task Workload Percentage) */}
+        {(() => {
+          const workloadPct = Math.min(Math.round((facultyTasks.length / 5) * 100), 100);
+          return (
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+              <View style={styles.progressHeaderRow}>
+                <Text style={[styles.infoLabel, { color: colors.subText }]}>
+                  Task Workload Allocation ({facultyTasks.length} Assigned Tasks)
+                </Text>
+                <Text style={[styles.rateValText, { color: colors.secondary }]}>{workloadPct}%</Text>
+              </View>
+              <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
+                <View style={[styles.progressFill, { width: `${workloadPct}%`, backgroundColor: colors.secondary }]} />
+              </View>
+            </View>
+          );
+        })()}
 
         {/* SECTION 3: Departmental Information */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Departmental & System Details</Text>
