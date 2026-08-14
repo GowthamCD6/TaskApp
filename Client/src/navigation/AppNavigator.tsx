@@ -19,6 +19,7 @@ import { useTheme } from '../context/ThemeContext';
 // 1. Admin Navigator Component
 // ==========================================
 interface AdminNavigatorProps {
+  currentAdmin?: User | null;
   allFaculty: User[];
   allTasks: Task[];
   selectedDate: string;
@@ -57,6 +58,7 @@ interface AdminNavigatorProps {
 }
 
 export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
+  currentAdmin,
   allFaculty,
   allTasks,
   selectedDate,
@@ -119,6 +121,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
       case 'profile':
         return (
           <AdminProfileScreen
+            currentAdmin={currentAdmin}
             allFaculty={allFaculty}
             allTasks={allTasks}
             onLogout={onLogout}
@@ -444,6 +447,7 @@ export const AppNavigator: React.FC = () => {
       <View style={styles.contentBody}>
         {currentUser.role === 'admin' ? (
           <AdminNavigator
+            currentAdmin={currentUser}
             allFaculty={allFaculty}
             allTasks={tasks}
             selectedDate={selectedDate}

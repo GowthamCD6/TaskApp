@@ -15,12 +15,14 @@ import { Icon } from '../../../components/common/Icon';
 import { updateUser } from '../../../services/api';
 
 interface AdminProfileScreenProps {
+  currentAdmin?: User | null;
   allFaculty: User[];
   allTasks: Task[];
   onLogout?: () => void;
 }
 
 export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
+  currentAdmin,
   allFaculty,
   allTasks,
   onLogout,
@@ -31,7 +33,9 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
     const nextTheme = isDark ? 'light' : 'dark';
     toggleTheme();
     try {
-      await updateUser(adminUser.id, { themeMode: nextTheme });
+      if (adminUser.id) {
+        await updateUser(adminUser.id, { themeMode: nextTheme });
+      }
     } catch (err) {
       console.warn('Failed to persist theme to backend:', err);
     }
@@ -39,16 +43,16 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
 
   // State for administrator details
   const [adminUser, setAdminUser] = useState<User>({
-    id: 'admin-1',
-    name: 'Dean James Wilson',
-    email: 'admin.dean@university.edu',
-    regNo: 'ADM-2026-001',
+    id: currentAdmin?.id || '',
+    name: currentAdmin?.name || '',
+    email: currentAdmin?.email || '',
+    regNo: currentAdmin?.regNo || '',
     role: 'admin',
-    department: 'Academic Administration',
-    avatar: '',
-    title: 'Chief Academic Officer',
-    phone: '+1 (555) 234-5678',
-    officeHours: 'Mon - Fri, 09:00 AM - 05:00 PM',
+    department: currentAdmin?.department || '',
+    avatar: currentAdmin?.avatar || '',
+    title: currentAdmin?.title || '',
+    phone: currentAdmin?.phone || '',
+    officeHours: currentAdmin?.officeHours || '',
   });
 
   // Modal State for Editing Profile Details

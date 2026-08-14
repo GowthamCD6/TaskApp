@@ -48,9 +48,9 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
       setName(faculty.name || '');
       setEmail(faculty.email || '');
       setDepartment(faculty.department || '');
-      setTitle(faculty.title || 'Assistant Professor');
-      setRegNo(faculty.regNo || 'FAC-2026-101');
-      setPassword(faculty.password || '123456');
+      setTitle(faculty.title || '');
+      setRegNo(faculty.regNo || '');
+      setPassword(faculty.password || '');
     }
   }, [faculty]);
 
@@ -74,9 +74,9 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
         name: name.trim(),
         email: email.trim(),
         department: department.trim(),
-        title: title.trim() || 'Assistant Professor',
-        regNo: regNo.trim() || 'FAC-2026-101',
-        password: password.trim() || '123456',
+        title: title.trim(),
+        regNo: regNo.trim(),
+        password: password.trim(),
       });
       onClose();
     }
