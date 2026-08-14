@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
+  Image,
+  Alert,
 } from 'react-native';
 import { User, Task } from '../../../types';
 import { AddFacultyModal } from '../../../components/modals/AddFacultyModal';
@@ -32,8 +34,10 @@ interface FacultyDirectoryScreenProps {
     email: string;
     department: string;
     regNo: string;
+    title?: string;
     password?: string;
   }) => void;
+  onDeleteFaculty?: (id: string) => void;
 }
 
 export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
@@ -42,6 +46,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
   onAddFaculty,
   onAssignTaskForFaculty,
   onUpdateFaculty,
+  onDeleteFaculty,
 }) => {
   const { colors, isDark } = useTheme();
   const [selectedFaculty, setSelectedFaculty] = useState<User | null>(null);
@@ -67,6 +72,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
     email: string;
     department: string;
     regNo: string;
+    title?: string;
     password?: string;
   }) => {
     if (onUpdateFaculty) {
@@ -123,11 +129,15 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
             >
               {/* Card Header Row with Avatar */}
               <View style={styles.cardHeaderRow}>
-                {/* Avatar Circle */}
+                {/* Avatar Circle or Image */}
                 <View style={styles.avatarContainer}>
-                  <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
-                    <Text style={styles.avatarInitials}>{initials}</Text>
-                  </View>
+                  {item.avatar ? (
+                    <Image source={{ uri: item.avatar }} style={styles.avatarImage} />
+                  ) : (
+                    <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.avatarInitials}>{initials}</Text>
+                    </View>
+                  )}
                   {/* Online indicator dot */}
                   <View style={[styles.onlineDot, { borderColor: colors.card }]} />
                 </View>
@@ -264,6 +274,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
           setEditingFaculty(null);
         }}
         onSaveFaculty={handleSaveEdit}
+        onDeleteFaculty={onDeleteFaculty}
       />
 
       {/* Faculty Schedule Modal */}
@@ -432,6 +443,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarImage: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+  },
   avatarInitials: {
     color: '#FFFFFF',
     fontSize: 16,
@@ -492,6 +508,10 @@ const styles = StyleSheet.create({
   emailText: {
     fontSize: 11,
   },
+  cardActionsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   editIconBtn: {
     width: 34,
     height: 34,
@@ -499,7 +519,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: 4,
   },
   cardDivider: {
     height: 1,

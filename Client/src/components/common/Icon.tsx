@@ -24,7 +24,8 @@ export type IconName =
   | 'alert'
   | 'logout'
   | 'edit'
-  | 'google';
+  | 'google'
+  | 'trash';
 
 interface IconProps {
   name: IconName;
@@ -174,6 +175,12 @@ export const Icon: React.FC<IconProps> = ({
           <>
             <Path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
             <Path d="M16 17l5-5-5-5M21 12H9" />
+          </>
+        );
+      case 'trash':
+        return (
+          <>
+            <Path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
           </>
         );
       default:

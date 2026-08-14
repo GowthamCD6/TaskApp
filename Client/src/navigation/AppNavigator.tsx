@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { User, Task, Priority, AdminTab, FacultyTab, NotificationItem } from '../types';
-import { fetchUsers, fetchTasks, createTask, completeTask, createUser, updateUser, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
+import { fetchUsers, fetchTasks, createTask, completeTask, createUser, updateUser, deleteUser, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/api';
 import { TabBar } from '../components/navigation/TabBar';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
 import { AdminScreen } from '../screens/Admin/Dashboard/AdminScreen';
@@ -38,6 +38,8 @@ interface AdminNavigatorProps {
     department: string;
     title: string;
     avatar?: string;
+    regNo?: string;
+    password?: string;
   }) => void;
   onUpdateFaculty: (updatedData: {
     id: string;
@@ -45,7 +47,10 @@ interface AdminNavigatorProps {
     email: string;
     department: string;
     regNo: string;
+    title?: string;
+    password?: string;
   }) => void;
+  onDeleteFaculty?: (id: string) => void;
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   onLogout: () => void;
@@ -59,6 +64,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
   onAssignTask,
   onAddFaculty,
   onUpdateFaculty,
+  onDeleteFaculty,
   activeTab,
   onTabChange,
   onLogout,
@@ -98,6 +104,7 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
             onAddFaculty={onAddFaculty}
             onAssignTaskForFaculty={handleAssignTaskForFaculty}
             onUpdateFaculty={onUpdateFaculty}
+            onDeleteFaculty={onDeleteFaculty}
           />
         );
       case 'analytics':
@@ -352,6 +359,8 @@ export const AppNavigator: React.FC = () => {
     department: string;
     title: string;
     avatar?: string;
+    regNo?: string;
+    password?: string;
   }) => {
     try {
       const createdUser = await createUser(facultyData);
@@ -371,6 +380,8 @@ export const AppNavigator: React.FC = () => {
     email: string;
     department: string;
     regNo: string;
+    title?: string;
+    password?: string;
   }) => {
     try {
       const updated = await updateUser(updatedData.id, updatedData);
@@ -380,6 +391,16 @@ export const AppNavigator: React.FC = () => {
       Alert.alert('Faculty Updated', `Successfully updated profile details for ${updatedData.name}.`);
     } catch {
       Alert.alert('Error', 'Failed to update faculty profile details.');
+    }
+  };
+
+  const handleDeleteFaculty = async (id: string) => {
+    try {
+      await deleteUser(id);
+      setAllFaculty(prev => prev.filter(f => f.id !== id));
+      Alert.alert('Faculty Removed', 'Faculty member has been removed from the directory.');
+    } catch {
+      Alert.alert('Error', 'Failed to delete faculty member.');
     }
   };
 
@@ -430,6 +451,7 @@ export const AppNavigator: React.FC = () => {
             onAssignTask={handleAssignTask}
             onAddFaculty={handleAddFaculty}
             onUpdateFaculty={handleUpdateFaculty}
+            onDeleteFaculty={handleDeleteFaculty}
             activeTab={activeAdminTab}
             onTabChange={setActiveAdminTab}
             onLogout={handleLogout}

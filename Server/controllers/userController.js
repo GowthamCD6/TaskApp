@@ -81,7 +81,7 @@ const getUserById = async (req, res) => {
 // POST /api/users (Admin adds a new Faculty member)
 const createUser = async (req, res) => {
   try {
-    const { name, email, department, title, avatar, phone, officeHours, regNo } = req.body;
+    const { name, email, department, title, avatar, phone, officeHours, regNo, password } = req.body;
 
     if (!name || !email || !department) {
       return res.status(400).json({
@@ -105,7 +105,7 @@ const createUser = async (req, res) => {
     const newUser = {
       id: `fac-${Date.now()}`,
       reg_no: newRegNo,
-      password: '123456',
+      password: password ? password.trim() : '123456',
       name: name.trim(),
       email: email.trim().toLowerCase(),
       role: 'faculty',
@@ -152,7 +152,7 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, department, title, avatar, phone, officeHours, regNo, themeMode, theme_mode, themeModeId } = req.body;
+    const { name, email, department, title, avatar, phone, officeHours, regNo, password, themeMode, theme_mode, themeModeId } = req.body;
 
     const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
     if (rows.length === 0) {
@@ -180,8 +180,10 @@ const updateUser = async (req, res) => {
       updatedThemeModeId = requestedMode === 'dark' ? 2 : 1;
     }
 
+    const updatedPassword = password !== undefined ? password.trim() : current.password;
+
     await pool.query(
-      `UPDATE users SET name = ?, email = ?, department = ?, title = ?, avatar = ?, phone = ?, office_hours = ?, reg_no = ?, theme_mode_id = ? WHERE id = ?`,
+      `UPDATE users SET name = ?, email = ?, department = ?, title = ?, avatar = ?, phone = ?, office_hours = ?, reg_no = ?, password = ?, theme_mode_id = ? WHERE id = ?`,
       [
         updatedName,
         updatedEmail,
@@ -191,6 +193,7 @@ const updateUser = async (req, res) => {
         updatedPhone,
         updatedOfficeHours,
         updatedRegNo,
+        updatedPassword,
         updatedThemeModeId,
         id,
       ]
@@ -212,9 +215,39 @@ const updateUser = async (req, res) => {
   }
 };
 
+// DELETE /api/users/:id (Admin deletes a Faculty member)
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      });
+    }
+
+    await pool.query('DELETE FROM users WHERE id = ?', [id]);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Faculty user deleted successfully',
+      data: formatUserRow(rows[0]),
+    });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to delete user',
+    });
+  }
+};
+
 module.exports = {
   getUsers,
   getUserById,
   createUser,
   updateUser,
+  deleteUser,
 };

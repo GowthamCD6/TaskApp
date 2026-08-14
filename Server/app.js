@@ -12,6 +12,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request Logging Middleware for Backend Terminal Console
+app.use((req, res, next) => {
+  const start = Date.now();
+  const time = new Date().toLocaleTimeString();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const statusCode = res.statusCode;
+    const statusSymbol = statusCode >= 400 ? '❌' : statusCode >= 300 ? '⚠️' : '✅';
+    console.log(
+      `[${time}] ${statusSymbol} ${req.method} ${req.originalUrl} -> Status: ${statusCode} (${duration}ms)`
+    );
+    if (req.body && Object.keys(req.body).length > 0 && req.method !== 'GET') {
+      const sanitizedBody = { ...req.body };
+      if (sanitizedBody.password) sanitizedBody.password = '***';
+      console.log(`   └─ 📦 Body:`, JSON.stringify(sanitizedBody));
+    }
+  });
+
+  next();
+});
+
 // Health Check Route
 app.get('/api/health', (req, res) => {
   res.status(200).json({
