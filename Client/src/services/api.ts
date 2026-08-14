@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { User, Task, NotificationItem } from '../types';
 
 // Connect to backend server on laptop IP address (10.150.254.92)
-const SERVER_IP = '10.150.254.92';
+const SERVER_IP = '10.150.250.40';
 const BASE_URL = `http://${SERVER_IP}:5000/api`;
 
 // Local fallback mock database in case backend is offline

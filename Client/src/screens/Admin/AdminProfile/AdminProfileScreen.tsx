@@ -153,7 +153,7 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
 
             {/* Profile Info */}
             <Text style={[styles.userNameText, { color: colors.text }]}>{adminUser.name}</Text>
-            
+
             <View style={styles.titleBadgeRow}>
               <View style={[styles.titleBadge, { backgroundColor: `${colors.primary}18` }]}>
                 <Icon name="academic" size={12} color={colors.primary} />

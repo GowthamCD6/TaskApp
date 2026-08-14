@@ -193,7 +193,7 @@ const pool = {
     if (useLocalSQLite) {
       return {
         query: (sql, params) => querySQLite(sql, params),
-        release: () => {},
+        release: () => { },
       };
     }
     try {
@@ -202,7 +202,7 @@ const pool = {
       useLocalSQLite = true;
       return {
         query: (sql, params) => querySQLite(sql, params),
-        release: () => {},
+        release: () => { },
       };
     }
   },
