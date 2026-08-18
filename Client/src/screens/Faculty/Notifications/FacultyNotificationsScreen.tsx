@@ -103,7 +103,7 @@ export const FacultyNotificationsScreen: React.FC<FacultyNotificationsScreenProp
           />
           {searchQuery ? (
             <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
-              <Text style={[styles.clearSearchText, { color: colors.subText }]}>✕</Text>
+              <Icon name="close" size={13} color={colors.subText} />
             </TouchableOpacity>
           ) : null}
         </View>

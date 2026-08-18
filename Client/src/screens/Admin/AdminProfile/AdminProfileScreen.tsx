@@ -284,8 +284,12 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
               <View style={[styles.statusIndicatorDot, { borderColor: colors.card }]} />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => handlePickFromGallery(true)} style={{ marginBottom: 4 }}>
-              <Text style={[styles.changePhotoText, { color: colors.primary }]}>📷 Change Profile Photo</Text>
+            <TouchableOpacity
+              onPress={() => handlePickFromGallery(true)}
+              style={{ marginBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            >
+              <Icon name="camera" size={14} color={colors.primary} />
+              <Text style={[styles.changePhotoText, { color: colors.primary }]}>Change Profile Photo</Text>
             </TouchableOpacity>
 
             {/* Profile Info */}
@@ -481,7 +485,7 @@ export const AdminProfileScreen: React.FC<AdminProfileScreenProps> = ({
                 style={[styles.closeBtn, { backgroundColor: colors.surface }]}
                 onPress={() => setEditModalVisible(false)}
               >
-                <Text style={[styles.closeBtnText, { color: colors.subText }]}>✕</Text>
+                <Icon name="close" size={14} color={colors.subText} />
               </TouchableOpacity>
             </View>
 

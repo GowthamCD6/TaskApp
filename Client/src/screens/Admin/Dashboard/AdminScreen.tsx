@@ -5,16 +5,24 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  Image,
+  Modal,
+  ScrollView,
 } from 'react-native';
-import { Task, User, Priority } from '../../../types';
+import { Task, User, Priority, NotificationItem, NotificationType } from '../../../types';
 import { CalendarStrip } from '../../../components/common/CalendarStrip';
 import { AssignTaskModal } from '../../../components/modals/AssignTaskModal';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
+import { getAvatarUrl } from '../../../services/api';
 
 interface AdminScreenProps {
   tasks: Task[];
   allFaculty: User[];
+  notifications?: NotificationItem[];
+  onMarkNotificationRead?: (id: string) => void;
+  onMarkAllNotificationsRead?: () => void;
+  onClearReadNotifications?: () => void;
   selectedDate: string;
   onSelectDate: (date: string) => void;
   onAssignTask: (taskData: {
@@ -33,6 +41,10 @@ interface AdminScreenProps {
 export const AdminScreen: React.FC<AdminScreenProps> = ({
   tasks,
   allFaculty,
+  notifications = [],
+  onMarkNotificationRead,
+  onMarkAllNotificationsRead,
+  onClearReadNotifications,
   selectedDate,
   onSelectDate,
   onAssignTask,
@@ -42,12 +54,26 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
   const [filterFacultyId, setFilterFacultyId] = useState<string>('all');
   const [showAllDates, setShowAllDates] = useState<boolean>(false);
   const [assignModalVisible, setAssignModalVisible] = useState(false);
+  const [notifModalVisible, setNotifModalVisible] = useState(false);
+
+  const unreadNotifCount = notifications.filter(n => !n.isRead).length;
 
   // Helper to normalize YYYY-MM-DD string
   const normalizeDateStr = (rawDate?: string) => {
     if (!rawDate) return '';
     return rawDate.split('T')[0].split(' ')[0].trim();
   };
+
+  // Calculate task counts per date for CalendarStrip & Active Dates selector
+  const taskCountsByDate = tasks.reduce((acc, t) => {
+    const d = normalizeDateStr(t.date);
+    if (d) {
+      acc[d] = (acc[d] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
+  const activeDatesWithData = Object.keys(taskCountsByDate).sort();
 
   // Filter tasks by date and faculty
   const filteredTasks = tasks.filter(t => {
@@ -72,6 +98,28 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Pinned Top Bar with Bell Icon */}
+      <View style={[styles.topBarHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        <View style={styles.topBarTitleGroup}>
+          <Icon name="shield" size={18} color={colors.primary} />
+          <Text style={[styles.topBarTitle, { color: colors.text }]}>Admin Workstation</Text>
+        </View>
+
+        {/* Bell Icon for Notifications */}
+        <TouchableOpacity
+          style={[styles.bellBtn, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}
+          onPress={() => setNotifModalVisible(true)}
+          activeOpacity={0.8}
+        >
+          <Icon name="bell" size={18} color={unreadNotifCount > 0 ? colors.primary : colors.subText} />
+          {unreadNotifCount > 0 && (
+            <View style={styles.bellBadgePill}>
+              <Text style={styles.bellBadgeText}>{unreadNotifCount > 9 ? '9+' : unreadNotifCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
       {/* Date Navigation Calendar Strip */}
       <CalendarStrip
         selectedDate={selectedDate}
@@ -79,37 +127,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
           setShowAllDates(false);
           onSelectDate(d);
         }}
+        taskCountsByDate={taskCountsByDate}
       />
 
       {/* Filter & Primary Action Header */}
       <View style={[styles.actionHeader, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
+        {/* Faculty Filter Dropdown */}
         <View style={styles.filterRow}>
-          {/* Date Scope Toggle Pill */}
-          <TouchableOpacity
-            style={[
-              styles.filterDropdown,
-              {
-                backgroundColor: showAllDates ? colors.primary : colors.surface,
-                borderColor: showAllDates ? colors.primary : colors.inputBorder,
-                marginRight: 8,
-              },
-            ]}
-            onPress={() => setShowAllDates(!showAllDates)}
-            activeOpacity={0.8}
-          >
-            <Icon name="calendar" size={13} color={showAllDates ? '#FFFFFF' : colors.primary} />
-            <Text
-              style={[
-                styles.filterDropdownText,
-                { color: showAllDates ? '#FFFFFF' : colors.primary, marginLeft: 4 },
-              ]}
-              numberOfLines={1}
-            >
-              {showAllDates ? `All Dates (${tasks.length})` : 'Selected Date'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Faculty Dropdown Toggle */}
           <TouchableOpacity
             style={[styles.filterDropdown, { backgroundColor: colors.surface, borderColor: colors.inputBorder, flex: 1 }]}
             onPress={() => {
@@ -120,13 +144,16 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
             }}
             activeOpacity={0.8}
           >
-            <Text style={[styles.filterDropdownText, { color: colors.primary }]} numberOfLines={1}>
-              {filterFacultyId === 'all'
-                ? 'All Faculty'
-                : allFaculty.find(f => f.id === filterFacultyId)?.name}
-            </Text>
+            <View style={styles.facultyFilterLeft}>
+              <Icon name="users" size={14} color={colors.primary} />
+              <Text style={[styles.filterDropdownText, { color: colors.text, marginLeft: 6 }]} numberOfLines={1}>
+                {filterFacultyId === 'all'
+                  ? 'All Faculty Members'
+                  : allFaculty.find(f => f.id === filterFacultyId)?.name}
+              </Text>
+            </View>
             <View style={{ marginLeft: 6 }}>
-              <Icon name="refresh" size={12} color={colors.primary} />
+              <Icon name="refresh" size={13} color={colors.primary} />
             </View>
           </TouchableOpacity>
         </View>
@@ -301,9 +328,13 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
 
                 {/* Faculty Assignee Row with Avatar */}
                 <View style={[styles.facultyRowBox, { backgroundColor: colors.surface }]}>
-                  <View style={[styles.facultyAvatarCircle, { backgroundColor: avatarBg }]}>
-                    <Text style={styles.facultyAvatarInitials}>{initials}</Text>
-                  </View>
+                  {faculty?.avatar ? (
+                    <Image source={{ uri: getAvatarUrl(faculty.avatar) }} style={styles.facultyAvatarImage} />
+                  ) : (
+                    <View style={[styles.facultyAvatarCircle, { backgroundColor: avatarBg }]}>
+                      <Text style={styles.facultyAvatarInitials}>{initials}</Text>
+                    </View>
+                  )}
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.facultyNameText, { color: colors.text }]}>{item.assignedToName}</Text>
                     <Text style={[styles.facultyDeptText, { color: colors.subText }]}>
@@ -341,6 +372,135 @@ export const AdminScreen: React.FC<AdminScreenProps> = ({
         onClose={() => setAssignModalVisible(false)}
         onSubmitTask={onAssignTask}
       />
+
+      {/* Admin Notification Alerts Modal */}
+      <Modal
+        visible={notifModalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setNotifModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.notifModalCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
+            {/* Header */}
+            <View style={[styles.notifModalHeader, { borderBottomColor: colors.cardBorder }]}>
+              <View style={styles.notifHeaderLeft}>
+                <View style={[styles.bellIconCircle, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
+                  <Icon name="bell" size={18} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={[styles.notifModalTitle, { color: colors.text }]}>Admin Activity & Alerts</Text>
+                  <Text style={[styles.notifModalSubtitle, { color: colors.subText }]}>
+                    {unreadNotifCount > 0 ? `${unreadNotifCount} unread update(s)` : 'All alerts caught up'}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.closeModalCircle, { backgroundColor: colors.surface }]}
+                onPress={() => setNotifModalVisible(false)}
+              >
+                <Icon name="close" size={14} color={colors.subText} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Quick Actions Row */}
+            {notifications.length > 0 && (
+              <View style={[styles.notifActionsRow, { backgroundColor: colors.surface }]}>
+                {onMarkAllNotificationsRead && (
+                  <TouchableOpacity
+                    onPress={onMarkAllNotificationsRead}
+                    style={styles.notifActionBtn}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="check" size={12} color={colors.primary} />
+                    <Text style={[styles.notifActionBtnText, { color: colors.primary }]}>Mark All Read</Text>
+                  </TouchableOpacity>
+                )}
+                {onClearReadNotifications && (
+                  <TouchableOpacity
+                    onPress={onClearReadNotifications}
+                    style={styles.notifActionBtn}
+                    activeOpacity={0.8}
+                  >
+                    <Icon name="edit" size={12} color={colors.subText} />
+                    <Text style={[styles.notifActionBtnText, { color: colors.subText }]}>Clear Read</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Notifications List */}
+            <ScrollView
+              style={styles.notifScrollArea}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {notifications.length === 0 ? (
+                <View style={styles.emptyNotifBox}>
+                  <Icon name="bell" size={32} color={colors.mutedText} />
+                  <Text style={[styles.emptyNotifTitle, { color: colors.text }]}>No Recent Alerts</Text>
+                  <Text style={[styles.emptyNotifSub, { color: colors.subText }]}>
+                    Faculty task logs and assignments will appear here in real-time.
+                  </Text>
+                </View>
+              ) : (
+                notifications.map(item => {
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[
+                        styles.notifItemCard,
+                        {
+                          backgroundColor: colors.surface,
+                          borderColor: !item.isRead ? colors.primary : colors.cardBorder,
+                        },
+                      ]}
+                      onPress={() => onMarkNotificationRead && onMarkNotificationRead(item.id)}
+                      activeOpacity={0.8}
+                    >
+                      <View style={styles.notifItemRow}>
+                        <View
+                          style={[
+                            styles.notifTypeCircle,
+                            {
+                              backgroundColor: item.type === 'urgent' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                            },
+                          ]}
+                        >
+                          <Icon
+                            name={item.type === 'urgent' ? 'alert' : 'clipboard'}
+                            size={14}
+                            color={item.type === 'urgent' ? '#EF4444' : '#10B981'}
+                          />
+                        </View>
+                        <View style={styles.notifItemContent}>
+                          <View style={styles.notifItemTitleRow}>
+                            <Text style={[styles.notifItemTitle, { color: colors.text }]} numberOfLines={1}>
+                              {item.title}
+                            </Text>
+                            {!item.isRead && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
+                          </View>
+                          <Text style={[styles.notifItemMessage, { color: colors.subText }]}>{item.message}</Text>
+                          <View style={styles.notifItemFooter}>
+                            <Text style={[styles.notifItemTimestamp, { color: colors.mutedText }]}>
+                              {item.timestamp}
+                            </Text>
+                            {item.senderName && (
+                              <Text style={[styles.notifItemSender, { color: colors.primary }]}>
+                                By: {item.senderName}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -380,6 +540,24 @@ const styles = StyleSheet.create({
   filterDropdownText: {
     fontSize: 13,
     fontWeight: '700',
+  },
+  activeDatesContainer: {
+    marginBottom: 10,
+  },
+  activeDatesLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  activeDatesScroll: {
+    gap: 6,
+  },
+  facultyFilterLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   assignTaskBtn: {
     paddingVertical: 12,
@@ -578,6 +756,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 10,
   },
+  facultyAvatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
   assigneeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -619,5 +803,192 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
     paddingHorizontal: 24,
+  },
+  topBarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  topBarTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  topBarTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  bellBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    position: 'relative',
+  },
+  bellBadgePill: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  bellBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  notifModalCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    maxHeight: '85%',
+    minHeight: '50%',
+    paddingBottom: 20,
+  },
+  notifModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  notifHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  bellIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifModalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  notifModalSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  closeModalCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeModalText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  notifActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(156, 163, 175, 0.15)',
+  },
+  notifActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  notifActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  notifScrollArea: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  emptyNotifBox: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    gap: 8,
+  },
+  emptyNotifTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  emptyNotifSub: {
+    fontSize: 12,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  notifItemCard: {
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+  },
+  notifItemRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  notifTypeCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifItemContent: {
+    flex: 1,
+  },
+  notifItemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  notifItemTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    flex: 1,
+    marginRight: 6,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  notifItemMessage: {
+    fontSize: 12,
+    marginTop: 3,
+    lineHeight: 16,
+  },
+  notifItemFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  notifItemTimestamp: {
+    fontSize: 10,
+  },
+  notifItemSender: {
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

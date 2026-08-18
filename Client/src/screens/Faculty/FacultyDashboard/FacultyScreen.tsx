@@ -13,6 +13,7 @@ import { CalendarStrip } from '../../../components/common/CalendarStrip';
 import { CompleteTaskModal } from '../../../components/modals/CompleteTaskModal';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
+import { getAvatarUrl } from '../../../services/api';
 
 interface FacultyScreenProps {
   currentFaculty: User | null;
@@ -36,11 +37,31 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [targetTask, setTargetTask] = useState<Task | null>(null);
 
+  // Helper to normalize YYYY-MM-DD string
+  const normalizeDateStr = (rawDate?: string) => {
+    if (!rawDate) return '';
+    return rawDate.split('T')[0].split(' ')[0].trim();
+  };
+
+  const normalizedSelectedDate = normalizeDateStr(selectedDate);
+
+  // Faculty all tasks
+  const facultyAllTasks = tasks.filter(t =>
+    currentFaculty ? t.assignedTo === currentFaculty.id : true
+  );
+
+  // Calculate task counts per date for CalendarStrip indicator
+  const taskCountsByDate = facultyAllTasks.reduce((acc, t) => {
+    const d = normalizeDateStr(t.date);
+    if (d) {
+      acc[d] = (acc[d] || 0) + 1;
+    }
+    return acc;
+  }, {} as Record<string, number>);
+
   // Filter tasks specifically for current faculty & selected date
-  const dayFacultyTasks = tasks.filter(t => {
-    const matchesFaculty = currentFaculty ? t.assignedTo === currentFaculty.id : true;
-    const matchesDate = t.date === selectedDate;
-    return matchesFaculty && matchesDate;
+  const dayFacultyTasks = facultyAllTasks.filter(t => {
+    return normalizeDateStr(t.date) === normalizedSelectedDate;
   });
 
   const totalCount = dayFacultyTasks.length;
@@ -65,7 +86,23 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
         <View style={[styles.headerBanner, { backgroundColor: colors.card, borderBottomColor: colors.cardBorder }]}>
           <View style={styles.profileRow}>
             <View style={styles.avatarWrapper}>
-              <Image source={{ uri: currentFaculty.avatar }} style={styles.avatarImage} />
+              {currentFaculty.avatar ? (
+                <Image
+                  source={{ uri: getAvatarUrl(currentFaculty.avatar) }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View style={[styles.avatarCircleFallback, { backgroundColor: colors.secondary }]}>
+                  <Text style={styles.avatarInitialsFallback}>
+                    {currentFaculty.name
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </Text>
+                </View>
+              )}
               <View style={styles.onlineBadge} />
             </View>
             <View style={styles.profileInfo}>
@@ -99,7 +136,11 @@ export const FacultyScreen: React.FC<FacultyScreenProps> = ({
       )}
 
       {/* 2. Calendar Strip */}
-      <CalendarStrip selectedDate={selectedDate} onSelectDate={onSelectDate} />
+      <CalendarStrip
+        selectedDate={selectedDate}
+        onSelectDate={onSelectDate}
+        taskCountsByDate={taskCountsByDate}
+      />
 
       {/* 3. Metric Stat Summary Cards */}
       <View style={styles.metricsContainer}>
@@ -372,6 +413,20 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     borderWidth: 2,
     borderColor: '#10B981',
+  },
+  avatarCircleFallback: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#10B981',
+  },
+  avatarInitialsFallback: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
   },
   onlineBadge: {
     position: 'absolute',

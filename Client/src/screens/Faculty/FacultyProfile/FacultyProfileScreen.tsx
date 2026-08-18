@@ -204,8 +204,12 @@ export const FacultyProfileScreen: React.FC<FacultyProfileScreenProps> = ({
               <View style={[styles.statusIndicatorDot, { borderColor: colors.card }]} />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handlePickFromGallery} style={{ marginBottom: 4 }}>
-              <Text style={[styles.changePhotoText, { color: colors.secondary }]}>📷 Change Profile Photo</Text>
+            <TouchableOpacity
+              onPress={handlePickFromGallery}
+              style={{ marginBottom: 4, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            >
+              <Icon name="camera" size={14} color={colors.secondary} />
+              <Text style={[styles.changePhotoText, { color: colors.secondary }]}>Change Profile Photo</Text>
             </TouchableOpacity>
 
             {/* Profile Info */}

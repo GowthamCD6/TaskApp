@@ -100,7 +100,7 @@ export const EditFacultyModal: React.FC<EditFacultyModalProps> = ({
               <Text style={[styles.modalTitle, { color: colors.text, marginLeft: 8 }]}>Edit Faculty Member</Text>
             </View>
             <TouchableOpacity style={[styles.closeBtn, { backgroundColor: colors.surface }]} onPress={onClose}>
-              <Text style={[styles.closeBtnText, { color: colors.subText }]}>✕</Text>
+              <Icon name="close" size={14} color={colors.subText} />
             </TouchableOpacity>
           </View>
 

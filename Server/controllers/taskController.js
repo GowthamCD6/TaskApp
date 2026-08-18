@@ -1,5 +1,20 @@
 const { pool } = require('../config/db');
 
+// Helper to format date cleanly as YYYY-MM-DD
+const cleanDateString = (val) => {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    return val.split('T')[0].split(' ')[0].trim();
+  }
+  if (val instanceof Date) {
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(val);
+};
+
 // Helper to format task object from SQL row
 const formatTaskRow = (row) => ({
   id: row.id,
@@ -8,14 +23,14 @@ const formatTaskRow = (row) => ({
   assignedTo: row.assigned_to,
   assignedToName: row.assigned_to_name || '',
   assignedBy: row.assigned_by || '',
-  date: row.date ? new Date(row.date).toISOString().split('T')[0] : '',
+  date: cleanDateString(row.date),
   startTime: row.start_time || '',
   endTime: row.end_time || '',
   priority: row.priority || 'Medium',
   status: row.status || 'pending',
   completionNote: row.completion_note || '',
-  completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : null,
-  createdAt: row.created_at ? new Date(row.created_at).toISOString() : null,
+  completedAt: row.completed_at ? (typeof row.completed_at === 'string' ? row.completed_at : new Date(row.completed_at).toISOString()) : null,
+  createdAt: row.created_at ? (typeof row.created_at === 'string' ? row.created_at : new Date(row.created_at).toISOString()) : null,
 });
 
 // GET /api/tasks
@@ -142,6 +157,21 @@ const createTask = async (req, res) => {
       ]
     );
 
+    // Create notification for assigned faculty
+    try {
+      const notifId = `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const notifType = priority === 'High' ? 'urgent' : 'task_assigned';
+      const notifTitle = priority === 'High' ? 'High Priority Task Assigned' : 'New Academic Task Assigned';
+      const notifMessage = `Task: "${newTask.title}" scheduled for ${newTask.date} (${newTask.startTime} - ${newTask.endTime})`;
+      await pool.query(
+        `INSERT INTO notifications (id, user_id, title, message, type, timestamp, is_read, sender_name)
+         VALUES (?, ?, ?, ?, ?, 'Just now', FALSE, ?)`,
+        [notifId, newTask.assignedTo, notifTitle, notifMessage, notifType, newTask.assignedBy || 'Admin']
+      );
+    } catch (notifErr) {
+      console.warn('Could not insert task assignment notification:', notifErr.message);
+    }
+
     res.status(201).json({
       status: 'success',
       message: `Task successfully assigned to ${facultyName}`,
@@ -170,6 +200,7 @@ const completeTask = async (req, res) => {
       });
     }
 
+    const taskRow = rows[0];
     const now = new Date();
     const formattedCompletedAt = now.toISOString().slice(0, 19).replace('T', ' ');
     const note = completionNote || 'Completed task.';
@@ -178,6 +209,22 @@ const completeTask = async (req, res) => {
       'UPDATE tasks SET status = ?, completion_note = ?, completed_at = ? WHERE id = ?',
       ['completed', note, formattedCompletedAt, id]
     );
+
+    // Create notification for admin / system feed
+    try {
+      const notifId = `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const notifTitle = 'Task Completed & Log Submitted';
+      const notifMessage = `${taskRow.assigned_to_name || 'Faculty'} completed "${taskRow.title}": "${note}"`;
+      
+      // Notify admin (or null user_id / broadcast for admin overview)
+      await pool.query(
+        `INSERT INTO notifications (id, user_id, title, message, type, timestamp, is_read, sender_name)
+         VALUES (?, 'admin', ?, ?, 'task_assigned', 'Just now', FALSE, ?)`,
+        [notifId, notifTitle, notifMessage, taskRow.assigned_to_name || 'Faculty']
+      );
+    } catch (notifErr) {
+      console.warn('Could not insert task completion notification:', notifErr.message);
+    }
 
     const [updatedRows] = await pool.query('SELECT * FROM tasks WHERE id = ?', [id]);
 

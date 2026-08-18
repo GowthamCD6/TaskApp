@@ -102,7 +102,7 @@ export const CompleteTaskModal: React.FC<CompleteTaskModalProps> = ({
               <Text style={styles.badgeText}>Complete Task & Submit Report</Text>
             </View>
             <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
-              <Text style={[styles.closeBtnText, { color: colors.subText }]}>✕</Text>
+              <Icon name="close" size={14} color={colors.subText} />
             </TouchableOpacity>
           </View>
 

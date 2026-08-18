@@ -80,6 +80,49 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
 }) => {
   const { colors } = useTheme();
   const [preselectedFacultyId, setPreselectedFacultyId] = useState<string>('');
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadNotifications = async () => {
+      try {
+        const notifs = await fetchNotifications();
+        if (isMounted) {
+          setNotifications(notifs);
+        }
+      } catch (err) {
+        console.error('Error fetching admin notifications:', err);
+      }
+    };
+    loadNotifications();
+    return () => {
+      isMounted = false;
+    };
+  }, [allTasks, activeTab]);
+
+  const handleMarkAsRead = async (id: string) => {
+    const item = notifications.find(n => n.id === id);
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
+    );
+    await markNotificationRead(id, item ? {
+      userId: 'admin',
+      title: item.title,
+      message: item.message,
+      type: item.type,
+      senderName: item.senderName,
+    } : undefined);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const allIds = notifications.map(n => n.id);
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    await markAllNotificationsRead('admin', allIds);
+  };
+
+  const handleClearRead = () => {
+    setNotifications(prev => prev.filter(n => !n.isRead));
+  };
 
   const handleAssignTaskForFaculty = (facultyId: string) => {
     setPreselectedFacultyId(facultyId);
@@ -143,6 +186,10 @@ export const AdminNavigator: React.FC<AdminNavigatorProps> = ({
           <AdminScreen
             tasks={allTasks}
             allFaculty={allFaculty}
+            notifications={notifications}
+            onMarkNotificationRead={handleMarkAsRead}
+            onMarkAllNotificationsRead={handleMarkAllAsRead}
+            onClearReadNotifications={handleClearRead}
             selectedDate={selectedDate}
             onSelectDate={onSelectDate}
             onAssignTask={onAssignTask}
@@ -204,18 +251,26 @@ export const FacultyNavigator: React.FC<FacultyNavigatorProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [currentFaculty?.id]);
+  }, [currentFaculty?.id, allTasks, activeTab]);
 
   const handleMarkAsRead = async (id: string) => {
+    const item = notifications.find(n => n.id === id);
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     );
-    await markNotificationRead(id);
+    await markNotificationRead(id, item ? {
+      userId: currentFaculty?.id,
+      title: item.title,
+      message: item.message,
+      type: item.type,
+      senderName: item.senderName,
+    } : undefined);
   };
 
   const handleMarkAllAsRead = async () => {
+    const allIds = notifications.map(n => n.id);
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    await markAllNotificationsRead(currentFaculty?.id);
+    await markAllNotificationsRead(currentFaculty?.id, allIds);
   };
 
   const handleClearRead = () => {

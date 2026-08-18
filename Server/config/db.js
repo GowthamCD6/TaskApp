@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Single TiDB Cloud MySQL Database Connection Pool
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
   port: parseInt(process.env.DB_PORT || '4000', 10),
@@ -14,6 +13,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   connectTimeout: 10000,
+  dateStrings: true,
 });
 
 module.exports = {

@@ -203,7 +203,7 @@ export const AssignTaskScreen: React.FC<AssignTaskScreenProps> = ({
                       onPress={() => toggleFacultySelection(faculty.id)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <Text style={[styles.chipRemove, { color: colors.mutedText }]}>✕</Text>
+                      <Icon name="close" size={11} color={colors.mutedText} />
                     </TouchableOpacity>
                   </View>
                 );

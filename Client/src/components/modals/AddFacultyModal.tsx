@@ -109,7 +109,7 @@ export const AddFacultyModal: React.FC<AddFacultyModalProps> = ({
               style={[styles.closeBtn, { backgroundColor: colors.surface }]}
               onPress={onClose}
             >
-              <Text style={[styles.closeBtnText, { color: colors.subText }]}>✕</Text>
+              <Icon name="close" size={14} color={colors.subText} />
             </TouchableOpacity>
           </View>
 

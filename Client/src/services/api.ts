@@ -221,10 +221,14 @@ export const fetchNotifications = async (userId?: string): Promise<NotificationI
   return [];
 };
 
-export const markNotificationRead = async (notificationId: string): Promise<boolean> => {
+export const markNotificationRead = async (
+  notificationId: string,
+  details?: { userId?: string; title?: string; message?: string; type?: string; senderName?: string }
+): Promise<boolean> => {
   try {
     const response = await apiFetch(`/notifications/${encodeURIComponent(notificationId)}/read`, {
       method: 'PATCH',
+      body: details ? JSON.stringify(details) : undefined,
     });
     return response.ok;
   } catch {
@@ -232,11 +236,14 @@ export const markNotificationRead = async (notificationId: string): Promise<bool
   }
 };
 
-export const markAllNotificationsRead = async (userId?: string): Promise<boolean> => {
+export const markAllNotificationsRead = async (
+  userId?: string,
+  notificationIds?: string[]
+): Promise<boolean> => {
   try {
     const response = await apiFetch('/notifications/read-all', {
       method: 'PATCH',
-      body: JSON.stringify({ userId }),
+      body: JSON.stringify({ userId, notificationIds }),
     });
     return response.ok;
   } catch {

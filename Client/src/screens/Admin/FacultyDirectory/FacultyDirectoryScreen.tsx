@@ -17,6 +17,7 @@ import { AddFacultyModal } from '../../../components/modals/AddFacultyModal';
 import { EditFacultyModal } from '../../../components/modals/EditFacultyModal';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
+import { getAvatarUrl } from '../../../services/api';
 
 // ==========================================
 // 🌟 Shimmering Skeleton Card Component
@@ -345,7 +346,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
           />
           {searchQuery ? (
             <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={[styles.clearSearchText, { color: colors.subText }]}>✕</Text>
+              <Icon name="close" size={13} color={colors.subText} />
             </TouchableOpacity>
           ) : null}
         </View>
@@ -421,7 +422,7 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
                   {/* Avatar Circle or Image */}
                   <View style={styles.avatarContainer}>
                     {item.avatar ? (
-                      <Image source={{ uri: item.avatar }} style={styles.avatarImage} />
+                      <Image source={{ uri: getAvatarUrl(item.avatar) }} style={styles.avatarImage} />
                     ) : (
                       <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
                         <Text style={styles.avatarInitials}>{initials}</Text>
@@ -584,17 +585,36 @@ export const FacultyDirectoryScreen: React.FC<FacultyDirectoryScreenProps> = ({
           <View style={styles.modalBackdrop}>
             <View style={[styles.modalCardContainer, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
               <View style={styles.modalHeaderRow}>
-                <View style={styles.flex1}>
-                  <Text style={[styles.modalFacultyName, { color: colors.text }]}>{selectedFaculty.name}</Text>
-                  <Text style={[styles.modalFacultyDept, { color: colors.subText }]}>
-                    {selectedFaculty.regNo ? `Reg. No: ${selectedFaculty.regNo} • ` : ''}{selectedFaculty.department}
-                  </Text>
+                <View style={styles.modalHeaderInfoGroup}>
+                  {selectedFaculty.avatar ? (
+                    <Image
+                      source={{ uri: getAvatarUrl(selectedFaculty.avatar) }}
+                      style={styles.modalAvatarImage}
+                    />
+                  ) : (
+                    <View style={[styles.avatarCircle, { backgroundColor: colors.primary, marginRight: 12 }]}>
+                      <Text style={styles.avatarInitials}>
+                        {selectedFaculty.name
+                          .split(' ')
+                          .map(n => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.flex1}>
+                    <Text style={[styles.modalFacultyName, { color: colors.text }]}>{selectedFaculty.name}</Text>
+                    <Text style={[styles.modalFacultyDept, { color: colors.subText }]}>
+                      {selectedFaculty.regNo ? `Reg. No: ${selectedFaculty.regNo} • ` : ''}{selectedFaculty.department}
+                    </Text>
+                  </View>
                 </View>
                 <TouchableOpacity
                   style={[styles.modalCloseBtn, { backgroundColor: colors.surface }]}
                   onPress={() => setSelectedFaculty(null)}
                 >
-                  <Text style={[styles.closeIconText, { color: colors.subText }]}>✕</Text>
+                  <Icon name="close" size={14} color={colors.subText} />
                 </TouchableOpacity>
               </View>
 
@@ -1000,7 +1020,19 @@ const styles = StyleSheet.create({
   modalHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
+  },
+  modalHeaderInfoGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  modalAvatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
   },
   modalFacultyName: {
     fontSize: 16,

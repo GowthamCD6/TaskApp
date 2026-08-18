@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Image } from 'react-native';
 import { Task, User } from '../../../types';
 import { useTheme } from '../../../context/ThemeContext';
 import { Icon } from '../../../components/common/Icon';
 import { CalendarStrip } from '../../../components/common/CalendarStrip';
+import { getAvatarUrl } from '../../../services/api';
 
 interface TaskAnalyticsScreenProps {
   allTasks: Task[];
@@ -45,6 +46,16 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
     return { faculty, total: tasks.length, done, pending: tasks.length - done, rate };
   });
 
+  // State for selected faculty modal
+  const [selectedFacultyForLogs, setSelectedFacultyForLogs] = useState<User | null>(null);
+
+  // Selected faculty's tasks and logs
+  const selectedFacultyTasks = selectedFacultyForLogs
+    ? displayTasks.filter(t => t.assignedTo === selectedFacultyForLogs.id)
+    : [];
+  const selectedFacultyDoneTasks = selectedFacultyTasks.filter(t => t.status === 'completed');
+  const selectedFacultyLogs = selectedFacultyTasks.filter(t => t.status === 'completed' && t.completionNote);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Pinned Top Header */}
@@ -80,7 +91,15 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
 
       {/* Calendar Strip (Shown when Day-Wise mode is active) */}
       {viewMode === 'day' && onSelectDate && (
-        <CalendarStrip selectedDate={selectedDate} onSelectDate={onSelectDate} />
+        <CalendarStrip
+          selectedDate={selectedDate}
+          onSelectDate={onSelectDate}
+          taskCountsByDate={allTasks.reduce((acc, t) => {
+            const d = t.date ? t.date.split('T')[0].split(' ')[0].trim() : '';
+            if (d) acc[d] = (acc[d] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>)}
+        />
       )}
 
       <ScrollView
@@ -196,9 +215,12 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
           </View>
 
           {/* Faculty Workload & Completion Directory */}
-          <Text style={[styles.sectionHeader, { color: colors.text }]}>
-            {viewMode === 'day' ? `Faculty Workload (${selectedDate})` : 'All-Time Faculty Workload'}
-          </Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionHeader, { color: colors.text, marginBottom: 0 }]}>
+              {viewMode === 'day' ? `Faculty Workload (${selectedDate})` : 'All-Time Faculty Workload'}
+            </Text>
+            <Text style={[styles.sectionSubhint, { color: colors.mutedText }]}>Tap card to view logs</Text>
+          </View>
           <View style={styles.facultyStatsList}>
             {(() => {
               const maxAssignedTasks = Math.max(...facultyStats.map(s => s.total), 5);
@@ -216,24 +238,33 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
                 else if (workloadRate >= 40) workloadColor = '#F59E0B';
 
                 return (
-                  <View
+                  <TouchableOpacity
                     key={faculty.id}
                     style={[styles.facultyStatCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+                    onPress={() => setSelectedFacultyForLogs(faculty)}
+                    activeOpacity={0.7}
                   >
                     <View style={styles.facultyStatHeader}>
-                      <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.avatarText}>{initials}</Text>
-                      </View>
+                      {faculty.avatar ? (
+                        <Image source={{ uri: getAvatarUrl(faculty.avatar) }} style={styles.avatarImage} />
+                      ) : (
+                        <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+                          <Text style={styles.avatarText}>{initials}</Text>
+                        </View>
+                      )}
                       <View style={styles.flex1}>
                         <Text style={[styles.facultyName, { color: colors.text }]}>{faculty.name}</Text>
                         <Text style={[styles.facultyDept, { color: colors.subText }]}>
                           {faculty.department} • {fTotal} Assigned ({fDone} Done)
                         </Text>
                       </View>
-                      <View style={[styles.rateTag, { backgroundColor: `${workloadColor}18` }]}>
-                        <Text style={[styles.rateTagText, { color: workloadColor }]}>
-                          {workloadRate}% Workload
-                        </Text>
+                      <View style={styles.facultyCardActionRight}>
+                        <View style={[styles.rateTag, { backgroundColor: `${workloadColor}18` }]}>
+                          <Text style={[styles.rateTagText, { color: workloadColor }]}>
+                            {workloadRate}% Workload
+                          </Text>
+                        </View>
+                        <Icon name="arrow-right" size={14} color={colors.mutedText} />
                       </View>
                     </View>
 
@@ -248,7 +279,7 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
                         ]}
                       />
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               });
             })()}
@@ -289,9 +320,16 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
                   ]}
                 >
                   <View style={styles.remarkHeader}>
-                    <View style={[styles.remarkAvatarCircle, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.remarkAvatarText}>{initials}</Text>
-                    </View>
+                    {faculty?.avatar ? (
+                      <Image
+                        source={{ uri: getAvatarUrl(faculty.avatar) }}
+                        style={styles.remarkAvatarImage}
+                      />
+                    ) : (
+                      <View style={[styles.remarkAvatarCircle, { backgroundColor: colors.primary }]}>
+                        <Text style={styles.remarkAvatarText}>{initials}</Text>
+                      </View>
+                    )}
                     <View style={styles.flex1}>
                       <Text style={[styles.taskTitle, { color: colors.text }]}>{item.title}</Text>
                       <Text style={[styles.facultySub, { color: colors.subText }]}>
@@ -320,6 +358,178 @@ export const TaskAnalyticsScreen: React.FC<TaskAnalyticsScreenProps> = ({
           )}
         </View>
       </ScrollView>
+
+      {/* Faculty Submitted Logs Modal */}
+      {selectedFacultyForLogs && (
+        <Modal
+          visible={!!selectedFacultyForLogs}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setSelectedFacultyForLogs(null)}
+        >
+          <View style={styles.modalOverlay}>
+            <View
+              style={[
+                styles.modalCard,
+                { backgroundColor: colors.card, borderColor: colors.cardBorder },
+              ]}
+            >
+              {/* Modal Header */}
+              <View style={[styles.modalHeaderRow, { borderBottomColor: colors.cardBorder }]}>
+                <View style={styles.modalHeaderLeft}>
+                  {selectedFacultyForLogs.avatar ? (
+                    <Image
+                      source={{ uri: getAvatarUrl(selectedFacultyForLogs.avatar) }}
+                      style={styles.modalAvatarImage}
+                    />
+                  ) : (
+                    <View style={[styles.avatarCircle, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.avatarText}>
+                        {selectedFacultyForLogs.name
+                          .split(' ')
+                          .map(n => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </Text>
+                    </View>
+                  )}
+                  <View>
+                    <Text style={[styles.modalFacultyName, { color: colors.text }]}>
+                      {selectedFacultyForLogs.name}
+                    </Text>
+                    <Text style={[styles.modalFacultyDept, { color: colors.subText }]}>
+                      {selectedFacultyForLogs.department} • {viewMode === 'day' ? `Date: ${selectedDate}` : 'All-Time Logs'}
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  style={[styles.modalCloseBtn, { backgroundColor: colors.surface }]}
+                  onPress={() => setSelectedFacultyForLogs(null)}
+                >
+                  <Icon name="close" size={14} color={colors.subText} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Quick Summary Pill Bar */}
+              <View style={[styles.modalSummaryBar, { backgroundColor: colors.surface }]}>
+                <View style={styles.modalStatCol}>
+                  <Text style={[styles.modalStatNum, { color: colors.text }]}>{selectedFacultyTasks.length}</Text>
+                  <Text style={[styles.modalStatLbl, { color: colors.subText }]}>Assigned</Text>
+                </View>
+                <View style={styles.modalStatDivider} />
+                <View style={styles.modalStatCol}>
+                  <Text style={[styles.modalStatNum, { color: '#10B981' }]}>{selectedFacultyDoneTasks.length}</Text>
+                  <Text style={[styles.modalStatLbl, { color: colors.subText }]}>Done</Text>
+                </View>
+                <View style={styles.modalStatDivider} />
+                <View style={styles.modalStatCol}>
+                  <Text style={[styles.modalStatNum, { color: colors.primary }]}>{selectedFacultyLogs.length}</Text>
+                  <Text style={[styles.modalStatLbl, { color: colors.subText }]}>Logs/Remarks</Text>
+                </View>
+              </View>
+
+              {/* Task Logs List */}
+              <ScrollView
+                style={styles.modalScrollArea}
+                contentContainerStyle={{ paddingBottom: 24 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {selectedFacultyTasks.length === 0 ? (
+                  <View style={styles.modalEmptyBox}>
+                    <Icon name="clipboard" size={32} color={colors.mutedText} />
+                    <Text style={[styles.modalEmptyText, { color: colors.mutedText }]}>
+                      {viewMode === 'day'
+                        ? `No tasks assigned to ${selectedFacultyForLogs.name} on ${selectedDate}.`
+                        : `No tasks found for ${selectedFacultyForLogs.name}.`}
+                    </Text>
+                  </View>
+                ) : (
+                  selectedFacultyTasks.map(task => {
+                    const isDone = task.status === 'completed';
+                    return (
+                      <View
+                        key={task.id}
+                        style={[
+                          styles.modalTaskCard,
+                          {
+                            backgroundColor: colors.surface,
+                            borderColor: colors.cardBorder,
+                          },
+                        ]}
+                      >
+                        <View style={styles.modalTaskHeader}>
+                          <View style={styles.flex1}>
+                            <Text style={[styles.modalTaskTitle, { color: colors.text }]}>
+                              {task.title}
+                            </Text>
+                            <Text style={[styles.modalTaskTiming, { color: colors.subText }]}>
+                              {task.date} • {task.startTime} - {task.endTime}
+                            </Text>
+                          </View>
+                          <View
+                            style={[
+                              styles.modalStatusPill,
+                              {
+                                backgroundColor: isDone ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                              },
+                            ]}
+                          >
+                            <Icon name={isDone ? 'check' : 'clock'} size={10} color={isDone ? '#10B981' : '#F59E0B'} />
+                            <Text
+                              style={[
+                                styles.modalStatusPillText,
+                                { color: isDone ? '#10B981' : '#F59E0B' },
+                              ]}
+                            >
+                              {isDone ? 'Completed' : 'Pending'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {task.description ? (
+                          <Text style={[styles.modalTaskDesc, { color: colors.subText }]}>
+                            {task.description}
+                          </Text>
+                        ) : null}
+
+                        {/* Submitted Log / Remark */}
+                        {isDone && task.completionNote ? (
+                          <View style={styles.modalLogBox}>
+                            <View style={styles.modalLogHeader}>
+                              <Icon name="clipboard" size={12} color="#10B981" />
+                              <Text style={styles.modalLogHeading}>Submitted Faculty Work Log:</Text>
+                            </View>
+                            <Text style={[styles.modalLogNoteText, { color: colors.text }]}>
+                              "{task.completionNote}"
+                            </Text>
+                            {task.completedAt && (
+                              <Text style={[styles.modalLogTimestamp, { color: colors.mutedText }]}>
+                                Submitted at: {new Date(task.completedAt).toLocaleString()}
+                              </Text>
+                            )}
+                          </View>
+                        ) : isDone ? (
+                          <View style={styles.modalNoRemarkBox}>
+                            <Text style={[styles.modalNoRemarkText, { color: colors.mutedText }]}>
+                              Marked completed without extra remarks.
+                            </Text>
+                          </View>
+                        ) : (
+                          <View style={styles.modalPendingBox}>
+                            <Icon name="clock" size={12} color="#F59E0B" />
+                            <Text style={styles.modalPendingText}>Work log not submitted yet (Task Pending).</Text>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };
@@ -513,6 +723,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
+  avatarImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginRight: 10,
+  },
+  modalAvatarImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    marginRight: 12,
+  },
   avatarText: {
     color: '#FFFFFF',
     fontSize: 12,
@@ -577,6 +799,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
+  remarkAvatarImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 10,
+  },
   remarkAvatarText: {
     color: '#FFFFFF',
     fontSize: 11,
@@ -615,5 +843,194 @@ const styles = StyleSheet.create({
   timestampText: {
     fontSize: 10,
     marginTop: 6,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    marginTop: 8,
+  },
+  sectionSubhint: {
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
+  facultyCardActionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalCard: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    maxHeight: '85%',
+    minHeight: '50%',
+    paddingBottom: 20,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  modalHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  modalFacultyName: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  modalFacultyDept: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  modalSummaryBar: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 10,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  modalStatCol: {
+    alignItems: 'center',
+  },
+  modalStatNum: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  modalStatLbl: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  modalStatDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(156, 163, 175, 0.2)',
+  },
+  modalScrollArea: {
+    paddingHorizontal: 16,
+  },
+  modalEmptyBox: {
+    alignItems: 'center',
+    paddingVertical: 36,
+    gap: 10,
+  },
+  modalEmptyText: {
+    fontSize: 13,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  modalTaskCard: {
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 10,
+    borderWidth: 1,
+  },
+  modalTaskHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 6,
+    gap: 8,
+  },
+  modalTaskTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  modalTaskTiming: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  modalStatusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  modalStatusPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  modalTaskDesc: {
+    fontSize: 12,
+    marginBottom: 8,
+    lineHeight: 16,
+  },
+  modalLogBox: {
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 6,
+  },
+  modalLogHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    gap: 4,
+  },
+  modalLogHeading: {
+    color: '#10B981',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  modalLogNoteText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  modalLogTimestamp: {
+    fontSize: 10,
+    marginTop: 6,
+  },
+  modalNoRemarkBox: {
+    marginTop: 6,
+    paddingVertical: 4,
+  },
+  modalNoRemarkText: {
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
+  modalPendingBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
+    paddingVertical: 4,
+  },
+  modalPendingText: {
+    fontSize: 11,
+    color: '#F59E0B',
+    fontWeight: '600',
   },
 });
